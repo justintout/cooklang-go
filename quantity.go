@@ -2,6 +2,7 @@ package cooklang
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"regexp"
 	"strconv"
@@ -31,6 +32,10 @@ type Quantity struct {
 	raw string
 }
 
+func (q Quantity) String() string {
+	return fmt.Sprintf("%s %s", q.S, q.Units)
+}
+
 func (q Quantity) MarshalJSON() ([]byte, error) {
 	qq := struct {
 		Quantity string `json:"quantity"`
@@ -43,8 +48,8 @@ func (q Quantity) MarshalJSON() ([]byte, error) {
 }
 
 // TODO: add *Servings arg for scaling?
-func parseQuantity(source string) Quantity {
-	q := Quantity{raw: source, S: "some", N: -1}
+func parseQuantity(source string, defaultS string, defaultN float32) Quantity {
+	q := Quantity{raw: source, S: defaultS, N: defaultN}
 	if source == "" || source == "{}" {
 		return q
 	}
@@ -55,8 +60,6 @@ func parseQuantity(source string) Quantity {
 	}
 
 	if s[0] == "" {
-		q.S = "some"
-		q.N = -1
 		return q
 	}
 
@@ -84,6 +87,18 @@ func parseQuantity(source string) Quantity {
 	}
 
 	q.S = s[0]
-	q.N = -1
 	return q
+}
+
+func strictParseQuantity(source string) (Quantity, error) {
+	if source == "" || source == "{}" {
+		return Quantity{}, fmt.Errorf("empty quantity not allowed in this context")
+	}
+
+	s := strings.SplitN(source[1:len(source)-2], "%", 2)
+	if len(s) != 2 {
+		return Quantity{}, fmt.Errorf("must have a quantity and unit in this context")
+	}
+
+	return parseQuantity(source, "", -1), nil
 }

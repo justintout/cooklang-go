@@ -36,20 +36,24 @@ import (
 func TestParseQuantity(t *testing.T) {
 	tests := []struct {
 		source string
+		ds     string
+		dn     float32
 
 		n    float32
 		s    string
 		unit string
 	}{
-		{"{1}", 1, "1", ""},
-		{"{3.5%cups}", 3.5, "3.5", "cups"},
-		{"{1 1/2%oz.}", 1.5, "1 1/2", "oz."},
-		{"{a few%sprigs{", -1, "a few", "sprigs"},
-		{"{%pounds}", -1, "some", "pounds"},
-		{"{10%minutes}", 10, "10", "minutes"},
+		{"{}", "some", -1, -1, "some", ""},
+		{"", "some", -1, -1, "some", ""},
+		{"{3}", "some", -1, 3, "3", ""},
+		{"{3.5%cups}", "some", -1, 3.5, "3.5", "cups"},
+		{"{1 1/2%oz.}", "some", -1, 1.5, "1 1/2", "oz."},
+		{"{a few%sprigs{", "some", -1, -1, "a few", "sprigs"},
+		{"{%pounds}", "some", -1, -1, "some", "pounds"},
+		{"{10%minutes}", "some", -1, 10, "10", "minutes"},
 	}
 	for _, tt := range tests {
-		q := parseQuantity(tt.source)
+		q := parseQuantity(tt.source, tt.ds, tt.dn)
 		if q.N != tt.n {
 			t.Errorf("numeric quantity for %q incorrect: got: %.2f, want: %.2f", tt.source, q.N, tt.n)
 		}

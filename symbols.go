@@ -12,7 +12,7 @@ const leftMetadata = ">>"
 
 const leftIngredient = "@"
 const leftCookware = "#"
-const leftTime = "~"
+const leftTimer = "~"
 
 const leftQuantity = "{"
 const rightQuantity = "}"

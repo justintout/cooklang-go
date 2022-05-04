@@ -12,20 +12,16 @@ type itemType int
 const (
 	itemError itemType = iota
 	itemEOF
-	// start of comment, -- to end of line
-	itemComment
-	// plain text
 	itemText
-	// ingredient, starting with @ and ending in {}
-	// with optional quantity and unit
+	itemComment
+	itemMetadata
+	itemStep
 	itemIngredient
-	itemLeftIngredient
 	//
 	itemCookware
 	//
 	itemTimer
 	//
-	itemQuantity
 )
 
 const (
@@ -34,8 +30,18 @@ const (
 )
 
 type item struct {
-	tpy itemType
+	typ itemType
 	val string
+}
+
+func (i item) String() string {
+	switch i.typ {
+	case itemEOF:
+		return "EOF"
+	case itemError:
+		return i.val
+	}
+	return i.val
 }
 
 type lexer struct {
@@ -85,14 +91,29 @@ func (l *lexer) backup() {
 	l.pos -= l.width
 }
 
+func (l *lexer) rewind() {
+	l.pos = l.start
+}
+
 func (l *lexer) peek() rune {
 	r := l.next()
 	l.backup()
 	return r
 }
 
+func (l *lexer) peekSpecial() rune {
+	p := l.pos
+	for {
+		r := l.next()
+		if strings.ContainsRune(special, r) {
+			l.pos = p
+			return r
+		}
+	}
+}
+
 func (l *lexer) accept(valid string) bool {
-	if strings.IndexRune(valid, l.next()) >= 0 {
+	if strings.ContainsRune(valid, l.next()) {
 		return true
 	}
 	l.backup()
@@ -106,7 +127,7 @@ func (l *lexer) acceptRun(valid string) {
 }
 
 func (l *lexer) acceptUntil(valid string) {
-	for strings.IndexRune(valid, l.next()) < 0 {
+	for !strings.ContainsRune(valid, l.next()) && l.peek() != eof {
 	}
 	l.backup()
 }
@@ -115,47 +136,3 @@ func (l *lexer) emit(t itemType) {
 	l.items <- item{t, l.input[l.start:l.pos]}
 	l.start = l.pos
 }
-
-func lexText(l *lexer) stateFn {
-	for {
-		if strings.HasPrefix(l.input[l.pos:], leftIngredient) {
-			if l.pos > l.start {
-				l.emit(itemText)
-			}
-			return lexIngredient
-		}
-		if l.next() == eof {
-			break
-		}
-	}
-	if l.pos > l.start {
-		l.emit(itemText)
-	}
-	l.emit(itemEOF)
-	return nil
-}
-
-func lexIngredient(l *lexer) stateFn {
-	l.accept("@")
-	l.acceptUntil("{ ")
-	if l.accept(" ") {
-
-	}
-	return nil // HERE IS WHERE YOU STOPPED
-}
-
-/*
-func lexNumber(l *lexer) stateFn {
-	digits := "0123456789"
-	l.acceptRun(digits)
-	if l.accept(".") {
-		l.acceptRun(digits)
-	}
-	if isAlphaNumeric(l.peek()) {
-		l.next()
-		return l.errorf("bad number: %q", l.input[l.start:l.pos])
-	}
-	l.emit(itemNumber)
-	return lexInsideQuantity
-}
-*/
