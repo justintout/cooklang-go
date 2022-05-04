@@ -4,35 +4,6 @@ import (
 	"testing"
 )
 
-// func TestQuantityMarshalJSON(t *testing.T) {
-// 	tests := []struct {
-// 		q        Quantity
-// 		expected string
-// 	}{
-// 		{
-// 			Quantity{S: "some"},
-// 			`{"quantity":"some","units":""}`,
-// 		},
-// 		{
-// 			Quantity{S: "1 1/2", N: 1.5, Units: ""},
-// 			`{"quantity":"1 1/2","units":""}`,
-// 		},
-// 		{
-// 			Quantity{S: "4.32", N: 4.32, Units: "kg"},
-// 			`{"quantity":"4.32","units":"kg"}`,
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		b, err := json.Marshal(tt.q)
-// 		if err != nil {
-// 			t.Error(err)
-// 		}
-// 		if string(b) != tt.expected {
-// 			t.Errorf("got: %s, want: %s", string(b), tt.expected)
-// 		}
-// 	}
-// }
-
 func TestParseQuantity(t *testing.T) {
 	tests := []struct {
 		source string

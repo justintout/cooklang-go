@@ -1,3 +1,7 @@
+// the lexer is based on rob pike's "lexical scanning in go" talk
+// from 2011: https://talks.golang.org/2011/lex.slide#1
+// i think he's said at this point its out dated and would do things
+// differently. need to research this.
 package cooklang
 
 import (

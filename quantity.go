@@ -54,7 +54,7 @@ func parseQuantity(source string, defaultS string, defaultN float32) Quantity {
 		return q
 	}
 
-	s := strings.SplitN(strings.Trim(source, "{}"), "%", 2)
+	s := strings.SplitN(strings.Trim(source, "{}"), dividerQuantity, 2)
 	if len(s) > 1 {
 		q.Units = s[1]
 	}
