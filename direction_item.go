@@ -6,8 +6,8 @@ type DirectionItemer interface {
 
 type DirectionItem struct {
 	Type     string
-	Name     string `yaml:"omitempty"`
-	Quantity string `yaml:"omitempty"`
-	Units    string
-	Value    string `yaml:"omitempty"`
+	Name     string `yaml:"name,omitempty"`
+	Quantity string `yaml:"quantity,omitempty"`
+	Units    string `yaml:"units,omitempty"`
+	Value    string `yaml:"value,omitempty"`
 }

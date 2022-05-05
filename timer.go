@@ -33,6 +33,15 @@ func (t Timer) String() string {
 	return t.raw
 }
 
+func (t Timer) DirectionItem() DirectionItem {
+	return DirectionItem{
+		Type:     "timer",
+		Name:     t.Name,
+		Quantity: t.S,
+		Units:    t.Units,
+	}
+}
+
 func (t Timer) MarshalJSON() ([]byte, error) {
 	tt := struct {
 		Name     string `json:"name,omitempty"`

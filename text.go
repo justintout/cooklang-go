@@ -20,6 +20,13 @@ func (t Text) String() string {
 	return t.Value
 }
 
+func (t Text) DirectionItem() DirectionItem {
+	return DirectionItem{
+		Type:  "text",
+		Value: t.Value,
+	}
+}
+
 func (t Text) MarshalJSON() ([]byte, error) {
 	m := map[string]string{
 		"type":  "text",

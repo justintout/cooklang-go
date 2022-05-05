@@ -19,6 +19,7 @@ type Step struct {
 func (s *Step) AddIngredient(i *Ingredient) {
 	i.stepPos = s.pos
 	s.Ingredients = append(s.Ingredients, i)
+	s.order = append(s.order, i)
 	s.DirectionItems = append(s.DirectionItems, i)
 	s.pos++
 }
@@ -26,6 +27,7 @@ func (s *Step) AddIngredient(i *Ingredient) {
 func (s *Step) AddCookware(c *Cookware) {
 	c.stepPos = s.pos
 	s.Cookware = append(s.Cookware, c)
+	s.DirectionItems = append(s.DirectionItems, c)
 	s.order = append(s.order, c)
 	s.pos++
 }
@@ -33,6 +35,7 @@ func (s *Step) AddCookware(c *Cookware) {
 func (s *Step) AddTimer(t *Timer) {
 	t.stepPos = s.pos
 	s.Timers = append(s.Timers, t)
+	s.DirectionItems = append(s.DirectionItems, t)
 	s.order = append(s.order, t)
 	s.pos++
 }
@@ -40,6 +43,7 @@ func (s *Step) AddTimer(t *Timer) {
 func (s *Step) AddText(t *Text) {
 	t.stepPos = s.pos
 	s.Text = append(s.Text, t)
+	s.DirectionItems = append(s.DirectionItems, t)
 	s.order = append(s.order, t)
 	s.pos++
 }

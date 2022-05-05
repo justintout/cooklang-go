@@ -12,13 +12,7 @@ type canonicalTest struct {
 	Source string
 	Result struct {
 		Metadata map[string]string
-		Steps    [][]struct {
-			Type     string
-			Name     string
-			Quantity string
-			Units    string
-			Value    string
-		}
+		Steps    [][]cooklang.DirectionItem
 	}
 }
 
