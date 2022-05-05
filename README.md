@@ -1,6 +1,7 @@
 # cooklang-go
 > (Very early work on a) Cooklang parser in Go. 
 
+[![workflow](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml/badge.svg)](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml)
 
 
 ## External References
