@@ -1,6 +1,7 @@
 package cooklang_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -57,6 +58,11 @@ func TestCanonical(t *testing.T) {
 			}
 
 			if len(test.Result.Steps) != len(r.Steps) {
+				fmt.Printf("--- %s\n", name)
+				fmt.Printf("from: %s\n", test.Source)
+				fmt.Printf("got: %+v\n", r.Steps)
+				fmt.Printf("want: %+v\n", test.Result.Steps)
+				fmt.Printf("---\n\n")
 				t.Errorf("wrong number of steps, got: %d, want: %d", len(r.Steps), len(test.Result.Steps))
 			}
 

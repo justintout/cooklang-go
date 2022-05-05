@@ -1,0 +1,22 @@
+name: workflow
+
+on: 
+  push: 
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-go@v3
+      with:
+        go-version: 1.18.x
+    - uses: actions/checkout@v3
+    - name: unit tests
+      run: |
+        go test '^[^TestCanonical]'
+    - name: canonical tests
+      run: |
+        go test 'TestCanonical'
