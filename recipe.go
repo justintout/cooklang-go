@@ -7,10 +7,10 @@ import (
 )
 
 type Recipe struct {
-	Name        string
+	Name        string    `yaml:"-"`
 	Metadata    *Metadata `json:"metadata"`
-	Servings    Servings  // duplicated in Metadata?
-	Steps       []*Step   `json:"steps"`
+	Servings    Servings  `yaml:"-"` // duplicated in Metadata?
+	Steps       []*Step   `json:"steps" yaml:"steps"`
 	Ingredients map[string][]string
 	// Ingredients []*Ingredient `json:"ingredients"`
 	// Cookware    []*Cookware   `json:"cookware"`

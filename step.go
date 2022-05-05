@@ -1,6 +1,10 @@
 package cooklang
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"gopkg.in/yaml.v3"
+)
 
 type Step struct {
 	Number int `json:"stepNumber"`
@@ -49,5 +53,14 @@ func (s *Step) AddText(t *Text) {
 }
 
 func (s Step) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.order)
+	return json.Marshal(s.DirectionItems)
+}
+
+func (s Step) MarshalYAML() (interface{}, error) {
+	var dd []DirectionItem
+	for _, d := range s.DirectionItems {
+		dd = append(dd, d.DirectionItem())
+	}
+	b, err := yaml.Marshal(dd)
+	return string(b), err
 }

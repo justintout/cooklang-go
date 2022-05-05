@@ -36,6 +36,11 @@ func TestCanonical(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			r := cooklang.MustParse(test.Source)
 
+			_, err := yaml.Marshal(r)
+			if err != nil {
+				t.Errorf("error marshaling recipe: %v", err)
+			}
+
 			for tk, tv := range test.Result.Metadata {
 				found := false
 				for k, v := range *r.Metadata {
@@ -50,6 +55,11 @@ func TestCanonical(t *testing.T) {
 					t.Errorf("did not find metadata key %q, got: %v, want: %v", tk, r.Metadata, test.Result.Metadata)
 				}
 			}
+
+			if len(test.Result.Steps) != len(r.Steps) {
+				t.Errorf("wrong number of steps, got: %d, want: %d", len(r.Steps), len(test.Result.Steps))
+			}
+
 		})
 	}
 }
