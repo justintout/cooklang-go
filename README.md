@@ -1,8 +1,9 @@
 # cooklang-go
 > (Very early work on a) Cooklang parser in Go. 
 
-[![workflow](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml/badge.svg)](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml)
+[![CI](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml/badge.svg)](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml)
 
+[![Canonical Tests](https://github.com/justintout/cooklang-go/actions/workflows/canonical.yaml/badge.svg)](https://github.com/justintout/cooklang-go/actions/workflows/canonical.yaml)
 
 ## External References
 
