@@ -35,7 +35,9 @@ func TestCanonical(t *testing.T) {
 	t.Logf("canonical tests version %s\n", tests.Version)
 	for name, test := range tests.Tests {
 		t.Run(name, func(t *testing.T) {
-
+			// if name != "testCommentsWithIngredients" {
+			// 	t.SkipNow()
+			// }
 			r := cooklang.MustParse(test.Source)
 
 			_, err := yaml.Marshal(r)

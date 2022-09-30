@@ -21,9 +21,13 @@ type Step struct {
 	recipe         *Recipe
 }
 
-func (s *Step) String() string {
+func (s Step) String() string {
 	return fmt.Sprintf("#%d: I(%d): %+v, C(%d): %+v, T(%d): %+v, TXT(%d): %+v",
 		s.Number, len(s.Ingredients), s.Ingredients, len(s.Cookware), s.Cookware, len(s.Timers), s.Timers, len(s.Text), s.Text)
+}
+
+func (s Step) Zero() bool {
+	return len(s.DirectionItems) == 0 && len(s.order) == 0 && len(s.Text) == 0
 }
 
 func (s *Step) AddIngredient(i *Ingredient) {

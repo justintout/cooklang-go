@@ -51,7 +51,10 @@ func parse(input string) (Recipe, error) {
 		case itemTimer:
 			step.AddTimer(NewTimer(item.val))
 		case itemStep:
-			recipe.AddStep(step)
+			// BAD
+			if !step.Zero() {
+				recipe.AddStep(step)
+			}
 			step = &Step{}
 		}
 	}
