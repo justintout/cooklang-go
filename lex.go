@@ -76,8 +76,6 @@ func lexLineComment(l *lexer) stateFn {
 	l.accept(leftLineComment)
 	l.acceptUntil("\n")
 	l.emit(itemComment)
-	l.accept("\n")
-	l.ignore()
 	return lexText
 }
 
