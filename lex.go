@@ -8,6 +8,9 @@ const special = "@#~{}\n"
 
 func lexText(l *lexer) stateFn {
 	for {
+		// if l.pos == len(l.input) {
+		// 	break
+		// }
 		if strings.HasPrefix(l.input[l.pos:], leftMetadata) {
 			if l.pos > l.start {
 				l.emit(itemText)
@@ -56,6 +59,7 @@ func lexText(l *lexer) stateFn {
 			}
 			l.accept("\n")
 			l.emit(itemStep)
+			l.lineStart = l.pos
 		}
 		if l.next() == eof {
 			break
@@ -89,8 +93,9 @@ func lexMetadata(l *lexer) stateFn {
 	l.accept(leftMetadata)
 	l.acceptUntil("\n")
 	l.emit(itemMetadata)
-	l.accept("\n")
 	l.ignore()
+	// l.lineStart = l.pos
+	l.start = l.pos
 	return lexText
 }
 
@@ -110,10 +115,15 @@ func lexTimer(l *lexer) stateFn {
 }
 
 func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
-	l.acceptUntil(" " + leftQuantity)
+	l.acceptUntil(" " + leftQuantity + "\n")
 	if l.accept(leftQuantity) {
 		l.acceptUntil(rightQuantity)
 		l.accept(rightQuantity)
+		l.emit(typ)
+		return lexText
+	}
+	if l.peek() == '\n' {
+		// single word default amount ingredient
 		l.emit(typ)
 		return lexText
 	}

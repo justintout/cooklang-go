@@ -2,6 +2,7 @@ package cooklang
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"gopkg.in/yaml.v3"
 )
@@ -18,6 +19,11 @@ type Step struct {
 	order          []json.Marshaler
 	pos            int
 	recipe         *Recipe
+}
+
+func (s *Step) String() string {
+	return fmt.Sprintf("#%d: I(%d): %+v, C(%d): %+v, T(%d): %+v, TXT(%d): %+v",
+		s.Number, len(s.Ingredients), s.Ingredients, len(s.Cookware), s.Cookware, len(s.Timers), s.Timers, len(s.Text), s.Text)
 }
 
 func (s *Step) AddIngredient(i *Ingredient) {

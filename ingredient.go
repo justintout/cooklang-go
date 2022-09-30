@@ -15,7 +15,7 @@ type Ingredient struct {
 
 func NewIngredient(source string) *Ingredient {
 	i := Ingredient{raw: source}
-	source = strings.TrimPrefix(source, "@")
+	source = strings.TrimSpace(strings.TrimPrefix(source, "@"))
 	if !strings.HasSuffix(source, "}") {
 		source += "{}"
 	}

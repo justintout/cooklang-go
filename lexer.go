@@ -53,10 +53,10 @@ type lexer struct {
 	input      string
 	stepsInput []string
 	start      int
+	lineStart  int
 	pos        int
 	width      int
 	items      chan item
-	steps      chan Step
 }
 
 func lex(name, input string) (*lexer, chan item) {
