@@ -11,7 +11,7 @@ func lexText(l *lexer) stateFn {
 		// if l.pos == len(l.input) {
 		// 	break
 		// }
-		if strings.HasPrefix(l.input[l.pos:], leftMetadata) {
+		if strings.HasPrefix(l.input[l.pos:], leftMetadata) && l.pos == l.lineStart {
 			if l.pos > l.start {
 				l.emit(itemText)
 			}
@@ -91,9 +91,9 @@ func lexMetadata(l *lexer) stateFn {
 	l.accept(leftMetadata)
 	l.acceptUntil("\n")
 	l.emit(itemMetadata)
+	l.accept("\n")
 	l.ignore()
-	// l.lineStart = l.pos
-	l.start = l.pos
+	l.lineStart = l.pos
 	return lexText
 }
 
