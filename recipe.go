@@ -66,15 +66,15 @@ func (r *Recipe) MarshalYAML() (interface{}, error) {
 	for _, s := range r.Steps {
 		cs := make(CanonicalStep, 0, len(s.order))
 		for _, di := range s.order {
-			switch di.(type) {
+			switch di := di.(type) {
 			case *Text:
-				cs = append(cs, NewCanonicalText(*di.(*Text)))
+				cs = append(cs, NewCanonicalText(*di))
 			case *Ingredient:
-				cs = append(cs, NewCanonicalIngredient(*di.(*Ingredient)))
+				cs = append(cs, NewCanonicalIngredient(*di))
 			case *Cookware:
-				cs = append(cs, NewCanonicalCookware(*di.(*Cookware)))
+				cs = append(cs, NewCanonicalCookware(*di))
 			case *Timer:
-				cs = append(cs, NewCanonicalTimer(*di.(*Timer)))
+				cs = append(cs, NewCanonicalTimer(*di))
 			default:
 				return nil, fmt.Errorf("unexpected item type: %v %T", di, di)
 			}

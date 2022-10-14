@@ -5,7 +5,7 @@ import "strings"
 type Metadata map[string]string
 
 func (m Metadata) Add(input string) {
-	input = strings.TrimSpace(strings.TrimPrefix(input, ">>"))
+	input = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(input), ">>"))
 	s := strings.SplitN(input, ":", 2)
 	if len(s) == 1 {
 		s = append(s, "")
