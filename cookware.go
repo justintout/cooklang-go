@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Cookware represents a tool used for a recipe
 type Cookware struct {
 	Name string `json:"name"`
 	Quantity
@@ -13,6 +14,7 @@ type Cookware struct {
 	stepPos int
 }
 
+// NewCookware creates a cookware from a cookware definition. Default quantity is 1.
 func NewCookware(source string) *Cookware {
 	c := Cookware{raw: source}
 	ns := strings.IndexRune(source, '#') + 1
@@ -27,10 +29,12 @@ func NewCookware(source string) *Cookware {
 	return &c
 }
 
+// String returns the cookware's raw string
 func (c Cookware) String() string {
 	return c.raw
 }
 
+// MarshalJSON implements json.Marshaler
 func (c Cookware) MarshalJSON() ([]byte, error) {
 	cc := struct {
 		Type     string `json:"type"`
@@ -44,6 +48,7 @@ func (c Cookware) MarshalJSON() ([]byte, error) {
 	return json.Marshal(cc)
 }
 
+// DirectionItem creates a new DirectionItem from the Cookware
 func (c Cookware) DirectionItem() DirectionItem {
 	return DirectionItem{
 		Type:     "cookware",

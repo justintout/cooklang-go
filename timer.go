@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Timer represents a timer used in a recipe
 type Timer struct {
 	Name string `json:"name"`
 	Quantity
@@ -14,6 +15,7 @@ type Timer struct {
 	stepPos int
 }
 
+// NewTimer creates a new Timer from a timer definition
 func NewTimer(source string) *Timer {
 	t := Timer{raw: source}
 	ns := strings.IndexRune(source, '~') + 1
@@ -29,10 +31,12 @@ func NewTimer(source string) *Timer {
 	return &t
 }
 
+// String implements Stringer for Timer
 func (t Timer) String() string {
 	return t.raw
 }
 
+// DirectionItem creates a new direction item from the Timer
 func (t Timer) DirectionItem() DirectionItem {
 	return DirectionItem{
 		Type:     "timer",
@@ -42,6 +46,7 @@ func (t Timer) DirectionItem() DirectionItem {
 	}
 }
 
+// MarshalJSON implements json.Marshaler for Timer
 func (t Timer) MarshalJSON() ([]byte, error) {
 	tt := struct {
 		Name     string `json:"name,omitempty"`

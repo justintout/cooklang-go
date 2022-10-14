@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// MustParseFile calls ParseFile and panics on error
 func MustParseFile(path string) Recipe {
 	r, err := ParseFile(path)
 	if err != nil {
@@ -13,6 +14,7 @@ func MustParseFile(path string) Recipe {
 	return r
 }
 
+// ParseFile parses the file at the given path as a Cooklang recipe
 func ParseFile(path string) (Recipe, error) {
 	c, err := os.ReadFile(path)
 	if err != nil {
@@ -21,6 +23,7 @@ func ParseFile(path string) (Recipe, error) {
 	return parse(string(c))
 }
 
+// MustParse calls Parse and panics on error
 func MustParse(input string) Recipe {
 	r, err := Parse(input)
 	if err != nil {
@@ -29,6 +32,7 @@ func MustParse(input string) Recipe {
 	return r
 }
 
+// Parse parses the input string as a Cooklang recipe
 func Parse(input string) (Recipe, error) {
 	return parse(input)
 }

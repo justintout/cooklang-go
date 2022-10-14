@@ -1,9 +1,23 @@
 # cooklang-go
-> (Very early work on a) Cooklang parser in Go. 
+> A Cooklang parser in Go. 
 
-[![CI](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml/badge.svg)](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml)
+[![CI](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml/badge.svg)](https://github.com/justintout/cooklang-go/actions/workflows/workflow.yaml) | [![Canonical Tests](https://github.com/justintout/cooklang-go/actions/workflows/canonical.yaml/badge.svg)](https://github.com/justintout/cooklang-go/actions/workflows/canonical.yaml)
 
-[![Canonical Tests](https://github.com/justintout/cooklang-go/actions/workflows/canonical.yaml/badge.svg)](https://github.com/justintout/cooklang-go/actions/workflows/canonical.yaml)
+## Usage
+
+See the [`pcook` executable](./cmd/pcook/) for usage.
+
+## Development
+
+Issues and pull requests welcome. 
+
+### Testing
+
+`canonical.yaml` is updated manually. It should be in lockstep with the [official canonical tests](https://github.com/cooklang/spec/tree/main/tests).
+
+```bash
+go test ./...
+```
 
 ## External References
 

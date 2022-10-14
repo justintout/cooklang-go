@@ -21,8 +21,8 @@ const (
 
 // Quantity is the representation of a quantity for ingredients and cookware,
 // or a duration for a timer in Cooklang.
-// TODO: scaling - it's kinda circular? AST needs to report scaling type then, if manual,
-//       the specific scaling portions?
+//
+// TODO: scaling - it's kinda circular? AST needs to report scaling type then, if manual, the specific scaling portions?
 type Quantity struct {
 	N     float32
 	S     string

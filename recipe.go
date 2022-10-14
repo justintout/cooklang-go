@@ -6,6 +6,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Recipe is a Cooklang recipe
 type Recipe struct {
 	Name        string    `yaml:"-"`
 	Metadata    *Metadata `json:"metadata"`
@@ -21,6 +22,7 @@ type Recipe struct {
 	filename string
 }
 
+// NewRecipe creates a new, empty recipe with the given name
 func NewRecipe(name string) Recipe {
 	return Recipe{
 		Name:        name,
@@ -32,6 +34,7 @@ func NewRecipe(name string) Recipe {
 	}
 }
 
+// AddStep appends a new step to the recipe
 func (r *Recipe) AddStep(s *Step) {
 	s.Number = len(r.Steps)
 	r.Steps = append(r.Steps, s)
@@ -58,23 +61,25 @@ func (r *Recipe) AddStep(s *Step) {
 	}
 }
 
+// MarshalYAML implements yaml.Marshaler for Recipe, returning the
+// Cooklang canonical test format for the recipe
 func (r *Recipe) MarshalYAML() (interface{}, error) {
-	cr := &CanonicalRecipe{
-		Steps:    make([]CanonicalStep, 0, len(r.Steps)),
+	cr := &canonicalRecipe{
+		Steps:    make([]canonicalStep, 0, len(r.Steps)),
 		Metadata: *r.Metadata,
 	}
 	for _, s := range r.Steps {
-		cs := make(CanonicalStep, 0, len(s.order))
+		cs := make(canonicalStep, 0, len(s.order))
 		for _, di := range s.order {
 			switch di := di.(type) {
 			case *Text:
-				cs = append(cs, NewCanonicalText(*di))
+				cs = append(cs, newCanonicalText(*di))
 			case *Ingredient:
-				cs = append(cs, NewCanonicalIngredient(*di))
+				cs = append(cs, newCanonicalIngredient(*di))
 			case *Cookware:
-				cs = append(cs, NewCanonicalCookware(*di))
+				cs = append(cs, newCanonicalCookware(*di))
 			case *Timer:
-				cs = append(cs, NewCanonicalTimer(*di))
+				cs = append(cs, newCanonicalTimer(*di))
 			default:
 				return nil, fmt.Errorf("unexpected item type: %v %T", di, di)
 			}
@@ -86,26 +91,26 @@ func (r *Recipe) MarshalYAML() (interface{}, error) {
 	return string(y), err
 }
 
-type CanonicalRecipe struct {
-	Steps    []CanonicalStep   `yaml:"steps"`
+type canonicalRecipe struct {
+	Steps    []canonicalStep   `yaml:"steps"`
 	Metadata map[string]string `yaml:"metadata"`
 }
 
-type CanonicalStep []DirectionItemTyper
+type canonicalStep []directionItemTyper
 
-type CanonicalDirectionItem struct {
+type canonicalDirectionItem struct {
 	Typ      string `yaml:"type"`
 	Name     string `yaml:"name"`
 	Quantity string `yaml:"quantity"`
 	Units    string `yaml:"units"`
 }
 
-func (cdi CanonicalDirectionItem) Type() string {
+func (cdi canonicalDirectionItem) Type() string {
 	return cdi.Typ
 }
 
-func NewCanonicalIngredient(i Ingredient) CanonicalDirectionItem {
-	return CanonicalDirectionItem{
+func newCanonicalIngredient(i Ingredient) canonicalDirectionItem {
+	return canonicalDirectionItem{
 		Typ:      "ingredient",
 		Name:     i.Name,
 		Quantity: i.Quantity.S,
@@ -113,16 +118,16 @@ func NewCanonicalIngredient(i Ingredient) CanonicalDirectionItem {
 	}
 }
 
-func NewCanonicalCookware(c Cookware) CanonicalDirectionItem {
-	return CanonicalDirectionItem{
+func newCanonicalCookware(c Cookware) canonicalDirectionItem {
+	return canonicalDirectionItem{
 		Typ:      "cookware",
 		Name:     c.Name,
 		Quantity: c.Quantity.S,
 	}
 }
 
-func NewCanonicalTimer(t Timer) CanonicalDirectionItem {
-	return CanonicalDirectionItem{
+func newCanonicalTimer(t Timer) canonicalDirectionItem {
+	return canonicalDirectionItem{
 		Typ:      "timer",
 		Name:     t.Name,
 		Quantity: t.Quantity.S,
@@ -130,22 +135,22 @@ func NewCanonicalTimer(t Timer) CanonicalDirectionItem {
 	}
 }
 
-type CanonicalText struct {
+type canonicalText struct {
 	Typ   string `yaml:"type"`
 	Value string `yaml:"value"`
 }
 
-func (ct CanonicalText) Type() string {
+func (ct canonicalText) Type() string {
 	return "text"
 }
 
-func NewCanonicalText(t Text) CanonicalText {
-	return CanonicalText{
+func newCanonicalText(t Text) canonicalText {
+	return canonicalText{
 		Typ:   "text",
 		Value: t.Value,
 	}
 }
 
-type DirectionItemTyper interface {
+type directionItemTyper interface {
 	Type() string
 }

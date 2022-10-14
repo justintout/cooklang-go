@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Ingredient represents an ingredient used in a recipe
 type Ingredient struct {
 	Name string
 	Quantity
@@ -13,6 +14,7 @@ type Ingredient struct {
 	stepPos int
 }
 
+// NewIngredient creates a new Ingredient from an ingredient definition
 func NewIngredient(source string) *Ingredient {
 	i := Ingredient{raw: source}
 	source = strings.TrimSpace(strings.TrimPrefix(source, "@"))
@@ -29,6 +31,7 @@ func (i Ingredient) String() string {
 	return i.raw
 }
 
+// DirectionItem creates a new DirectionItem from the Ingredient
 func (i Ingredient) DirectionItem() DirectionItem {
 	return DirectionItem{
 		Type:     "ingredient",
@@ -38,6 +41,7 @@ func (i Ingredient) DirectionItem() DirectionItem {
 	}
 }
 
+// MarshalJSON implements json.Marshaler for Ingredient
 func (i Ingredient) MarshalJSON() ([]byte, error) {
 	ii := struct {
 		Type     string `json:"type"`

@@ -2,8 +2,10 @@ package cooklang
 
 import "strings"
 
+// Metadata represents recipe metadata
 type Metadata map[string]string
 
+// Add inserts a new metadata key/value pair from a metadata definition
 func (m Metadata) Add(input string) {
 	input = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(input), ">>"))
 	s := strings.SplitN(input, ":", 2)
