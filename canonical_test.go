@@ -44,7 +44,7 @@ func TestCanonical(t *testing.T) {
 
 			for tk, tv := range test.Result.Metadata {
 				found := false
-				for k, v := range *r.Metadata {
+				for k, v := range r.Metadata {
 					if k == tk {
 						found = true
 						if v != tv {
