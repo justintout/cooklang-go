@@ -8,10 +8,10 @@ import (
 
 // Recipe is a Cooklang recipe
 type Recipe struct {
-	Name        string    `yaml:"-"`
-	Metadata    *Metadata `json:"metadata"`
-	Servings    Servings  `yaml:"-"` // duplicated in Metadata?
-	Steps       []*Step   `json:"steps" yaml:"steps"`
+	Name        string   `yaml:"-"`
+	Metadata    Metadata `json:"metadata"`
+	Servings    Servings `yaml:"-"` // duplicated in Metadata?
+	Steps       []*Step  `json:"steps" yaml:"steps"`
 	Ingredients map[string][]string
 	// Ingredients []*Ingredient `json:"ingredients"`
 	// Cookware    []*Cookware   `json:"cookware"`
@@ -26,7 +26,7 @@ type Recipe struct {
 func NewRecipe(name string) Recipe {
 	return Recipe{
 		Name:        name,
-		Metadata:    &Metadata{},
+		Metadata:    make(Metadata),
 		Steps:       make([]*Step, 0),
 		Ingredients: make(map[string][]string),
 		Cookware:    make(map[string][]string),
@@ -66,7 +66,7 @@ func (r *Recipe) AddStep(s *Step) {
 func (r *Recipe) MarshalYAML() (interface{}, error) {
 	cr := &canonicalRecipe{
 		Steps:    make([]canonicalStep, 0, len(r.Steps)),
-		Metadata: *r.Metadata,
+		Metadata: r.Metadata,
 	}
 	for _, s := range r.Steps {
 		cs := make(canonicalStep, 0, len(s.order))
