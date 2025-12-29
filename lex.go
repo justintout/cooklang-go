@@ -109,7 +109,33 @@ func lexCookware(l *lexer) stateFn {
 
 func lexTimer(l *lexer) stateFn {
 	l.accept(leftTimer)
-	return lexQuantifiedItem(l, itemTimer)
+	// Timers require braces per spec: ~{qty%unit} or ~name{qty%unit}
+	// If no brace found before other special chars or newline, emit as text
+	l.acceptUntil(" " + leftQuantity + "\n")
+	if l.accept(leftQuantity) {
+		l.acceptUntil(rightQuantity)
+		l.accept(rightQuantity)
+		l.emit(itemTimer)
+		return lexText
+	}
+	if l.peek() == '\n' {
+		// No braces, hit newline - not a valid timer
+		l.emit(itemText)
+		return lexText
+	}
+	if l.accept(" ") {
+		// Check if next special char is { (multi-word name) or something else
+		if l.peekSpecial() == '{' {
+			// Multi-word timer name like ~boil eggs{3%minutes}
+			l.acceptUntil(rightQuantity)
+			l.accept(rightQuantity)
+			l.emit(itemTimer)
+			return lexText
+		}
+	}
+	// No braces before other special char - not a valid timer, emit as text
+	l.emit(itemText)
+	return lexText
 }
 
 func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
