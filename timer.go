@@ -22,7 +22,7 @@ func NewTimer(source string) *Timer {
 	qs := strings.IndexRune(source, '{')
 	t.Name = source[ns:qs]
 	var err error
-	if t.Quantity, err = strictParseQuantity(source[qs : len(source)-2]); err != nil {
+	if t.Quantity, err = strictParseQuantity(source[qs:]); err != nil {
 		// TODO: how to handle a parse error here?
 		// preferably the lexer shouldn't emit as a timer so
 		// maybe unnecessary to do much

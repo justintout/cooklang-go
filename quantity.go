@@ -33,6 +33,9 @@ type Quantity struct {
 }
 
 func (q Quantity) String() string {
+	if q.Units == "" {
+		return q.S
+	}
 	return fmt.Sprintf("%s %s", q.S, q.Units)
 }
 
@@ -95,7 +98,7 @@ func strictParseQuantity(source string) (Quantity, error) {
 		return Quantity{}, fmt.Errorf("empty quantity not allowed in this context")
 	}
 
-	s := strings.SplitN(source[1:len(source)-2], "%", 2)
+	s := strings.SplitN(source[1:len(source)-1], "%", 2)
 	if len(s) != 2 {
 		return Quantity{}, fmt.Errorf("must have a quantity and unit in this context")
 	}
