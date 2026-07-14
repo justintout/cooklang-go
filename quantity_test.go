@@ -1,6 +1,7 @@
 package cooklang
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -33,6 +34,56 @@ func TestParseQuantity(t *testing.T) {
 		}
 		if q.Units != tt.unit {
 			t.Errorf("unit for %q incorrect: got: %q, want: %q", tt.source, q.Units, tt.unit)
+		}
+	}
+}
+
+func TestSumQuantities(t *testing.T) {
+	tests := []struct {
+		name string
+		in   []Quantity
+		want []string
+	}{
+		{
+			"identical units are summed",
+			[]Quantity{{N: 2, S: "2", Units: "cups"}, {N: 3, S: "3", Units: "cups"}},
+			[]string{"5 cups"},
+		},
+		{
+			"unitless numbers are summed",
+			[]Quantity{{N: 2, S: "2"}, {N: 1, S: "1"}},
+			[]string{"3"},
+		},
+		{
+			"convertible units in a family collapse to the first unit",
+			[]Quantity{{N: 1, S: "1", Units: "tbsp"}, {N: 3, S: "3", Units: "tsp"}},
+			[]string{"2 tbsp"},
+		},
+		{
+			"grams and kilograms combine",
+			[]Quantity{{N: 500, S: "500", Units: "g"}, {N: 1, S: "1", Units: "kg"}},
+			[]string{"1500 g"},
+		},
+		{
+			"incompatible units stay separate, first unit seen leads",
+			[]Quantity{{N: 2, S: "2", Units: "cups"}, {N: 100, S: "100", Units: "g"}},
+			[]string{"2 cups", "100 g"},
+		},
+		{
+			"non-numeric quantities are kept verbatim",
+			[]Quantity{{N: -1, S: "some"}, {N: 2, S: "2", Units: "cups"}},
+			[]string{"some", "2 cups"},
+		},
+		{
+			"case and pluralization do not block summation",
+			[]Quantity{{N: 1, S: "1", Units: "Cup"}, {N: 2, S: "2", Units: "cups"}},
+			[]string{"3 Cup"},
+		},
+	}
+	for _, tt := range tests {
+		got := sumQuantities(tt.in)
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%s: got: %v, want: %v", tt.name, got, tt.want)
 		}
 	}
 }

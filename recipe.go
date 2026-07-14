@@ -19,18 +19,23 @@ type Recipe struct {
 	Cookware map[string][]string `json:"cookware"`
 	Timers   map[string]string   `json:"timers"`
 
+	// ingredientQuantities accumulates every quantity seen for an
+	// ingredient name so Ingredients can be re-summed as steps are added.
+	ingredientQuantities map[string][]Quantity
+
 	filename string
 }
 
 // NewRecipe creates a new, empty recipe with the given name
 func NewRecipe(name string) Recipe {
 	return Recipe{
-		Name:        name,
-		Metadata:    make(Metadata),
-		Steps:       make([]*Step, 0),
-		Ingredients: make(map[string][]string),
-		Cookware:    make(map[string][]string),
-		Timers:      make(map[string]string),
+		Name:                 name,
+		Metadata:             make(Metadata),
+		Steps:                make([]*Step, 0),
+		Ingredients:          make(map[string][]string),
+		Cookware:             make(map[string][]string),
+		Timers:               make(map[string]string),
+		ingredientQuantities: make(map[string][]Quantity),
 	}
 }
 
@@ -38,13 +43,9 @@ func NewRecipe(name string) Recipe {
 func (r *Recipe) AddStep(s *Step) {
 	s.Number = len(r.Steps)
 	r.Steps = append(r.Steps, s)
-	// TODO: add em up. need conversions...
 	for _, i := range s.Ingredients {
-		if ri, ok := r.Ingredients[i.Name]; ok {
-			r.Ingredients[i.Name] = append(ri, i.Quantity.String())
-			continue
-		}
-		r.Ingredients[i.Name] = []string{i.Quantity.String()}
+		r.ingredientQuantities[i.Name] = append(r.ingredientQuantities[i.Name], i.Quantity)
+		r.Ingredients[i.Name] = sumQuantities(r.ingredientQuantities[i.Name])
 	}
 	for _, c := range s.Cookware {
 		if rc, ok := r.Cookware[c.Name]; ok {

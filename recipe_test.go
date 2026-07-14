@@ -1,8 +1,44 @@
 package cooklang
 
 import (
+	"reflect"
 	"testing"
 )
+
+func TestRecipeIngredientTotals(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   map[string][]string
+	}{
+		{
+			"same ingredient with same units is summed across steps",
+			"Add @flour{2%cups}.\nAdd more @flour{1%cups}.\n",
+			map[string][]string{"flour": {"3 cups"}},
+		},
+		{
+			"convertible units within a family are summed",
+			"Add @butter{1%tbsp}.\nAdd @butter{3%tsp}.\n",
+			map[string][]string{"butter": {"2 tbsp"}},
+		},
+		{
+			"incompatible units are kept as separate totals",
+			"Add @water{2%cups}.\nAdd @water{100%g}.\n",
+			map[string][]string{"water": {"2 cups", "100 g"}},
+		},
+		{
+			"quantity-less ingredients keep the list behavior",
+			"Crack @eggs{}.\nBeat the @eggs{}.\n",
+			map[string][]string{"eggs": {"some", "some"}},
+		},
+	}
+	for _, tt := range tests {
+		r := MustParse(tt.source)
+		if !reflect.DeepEqual(r.Ingredients, tt.want) {
+			t.Errorf("%s: got: %v, want: %v", tt.name, r.Ingredients, tt.want)
+		}
+	}
+}
 
 func TestNewIngredient(t *testing.T) {
 	tests := []struct {
