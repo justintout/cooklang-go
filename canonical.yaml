@@ -581,4 +581,112 @@ tests:
             name: "potato"
       metadata: {}
 
-# TODO add common syntax errors
+  # Common syntax errors. Cooklang has no error state: malformed input is
+  # parsed best-effort, so these assert the parser degrades gracefully (no
+  # panic, no hang) and produce the steps it actually recovers.
+
+  # An ingredient with an unclosed quantity brace consumes the rest of the
+  # line, including the trailing newline, so the step is never terminated and
+  # is dropped.
+  testErrorUnclosedIngredientBrace:
+    source: |
+      Add @salt{ to taste
+    result:
+      steps: []
+      metadata: {}
+
+
+  # An unclosed cookware brace behaves the same way as an ingredient one.
+  testErrorUnclosedCookwareBrace:
+    source: |
+      Use #pot{ now
+    result:
+      steps: []
+      metadata: {}
+
+
+  # An empty ingredient name is kept as an ingredient with no name.
+  testErrorEmptyIngredientName:
+    source: |
+      Add @{1%tbsp} now
+    result:
+      steps:
+        -
+          - type: text
+            value: "Add "
+          - type: ingredient
+            name: ""
+            quantity: 1
+            units: "tbsp"
+          - type: text
+            value: " now"
+      metadata: {}
+
+
+  # A stray @ with no name is parsed as an empty ingredient rather than failing.
+  testErrorStrayIngredientToken:
+    source: |
+      just a stray @ token
+    result:
+      steps:
+        -
+          - type: text
+            value: "just a stray "
+          - type: ingredient
+            name: " "
+            quantity: some
+            units: ""
+          - type: text
+            value: "token"
+      metadata: {}
+
+
+  # A stray ~ without braces is not a valid timer and stays as plain text.
+  testErrorStrayTimerToken:
+    source: |
+      just a stray ~ token
+    result:
+      steps:
+        -
+          - type: text
+            value: "just a stray "
+          - type: text
+            value: "~ "
+          - type: text
+            value: "token"
+      metadata: {}
+
+
+  # A timer without braces is not valid and is emitted as text.
+  testErrorTimerWithoutBraces:
+    source: |
+      Cook ~eggs no braces
+    result:
+      steps:
+        -
+          - type: text
+            value: "Cook "
+          - type: text
+            value: "~eggs "
+          - type: text
+            value: "no braces"
+      metadata: {}
+
+
+  # A malformed quantity (stray percent) is kept verbatim on the ingredient.
+  testErrorMalformedQuantity:
+    source: |
+      Add @sugar{10%%g} now
+    result:
+      steps:
+        -
+          - type: text
+            value: "Add "
+          - type: ingredient
+            name: "sugar"
+            quantity: 10
+            units: "%g"
+          - type: text
+            value: " now"
+      metadata: {}
+
