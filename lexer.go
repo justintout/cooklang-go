@@ -109,6 +109,10 @@ func (l *lexer) peekSpecial() rune {
 	p := l.pos
 	for {
 		r := l.next()
+		if r == eof {
+			l.pos = p
+			return eof
+		}
 		if strings.ContainsRune(special, r) {
 			l.pos = p
 			return r
