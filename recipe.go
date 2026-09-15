@@ -10,16 +10,11 @@ import (
 type Recipe struct {
 	Name        string   `yaml:"-"`
 	Metadata    Metadata `json:"metadata"`
-	Servings    Servings `yaml:"-"` // duplicated in Metadata?
 	Steps       []*Step  `json:"steps" yaml:"steps"`
 	Ingredients map[string][]string
-	// Ingredients []*Ingredient `json:"ingredients"`
-	// Cookware    []*Cookware   `json:"cookware"`
-	// Timers      []*Timer      `json:"timers"`
+
 	Cookware map[string][]string `json:"cookware"`
 	Timers   map[string]string   `json:"timers"`
-
-	filename string
 }
 
 // NewRecipe creates a new, empty recipe with the given name

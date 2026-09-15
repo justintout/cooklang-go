@@ -29,43 +29,24 @@ const (
 	//
 )
 
-const (
-	//
-	itemCategory itemType = iota
-)
-
 type item struct {
 	typ itemType
 	val string
 }
 
-func (i item) String() string {
-	switch i.typ {
-	case itemEOF:
-		return "EOF"
-	case itemError:
-		return i.val
-	}
-	return i.val
-}
-
 type lexer struct {
-	name       string
-	input      string
-	stepsInput []string
-	start      int
-	lineStart  int
-	pos        int
-	width      int
-	items      chan item
+	input     string
+	start     int
+	lineStart int
+	pos       int
+	width     int
+	items     chan item
 }
 
-func lex(name, input string) (*lexer, chan item) {
+func lex(input string) (*lexer, chan item) {
 	l := &lexer{
-		name:       name,
-		input:      input,
-		stepsInput: strings.Split(input, "\n"),
-		items:      make(chan item),
+		input: input,
+		items: make(chan item),
 	}
 	go l.run()
 	return l, l.items
@@ -88,16 +69,8 @@ func (l *lexer) next() (r rune) {
 	return r
 }
 
-func (l *lexer) ignore() {
-	l.start = l.pos
-}
-
 func (l *lexer) backup() {
 	l.pos -= l.width
-}
-
-func (l *lexer) rewind() {
-	l.pos = l.start
 }
 
 func (l *lexer) peek() rune {
@@ -183,12 +156,6 @@ func (l *lexer) cutAtWordEnd(floor int) bool {
 		}
 	}
 	return l.pos > floor
-}
-
-func (l *lexer) acceptRun(valid string) {
-	for strings.IndexRune(valid, l.next()) >= 0 {
-	}
-	l.backup()
 }
 
 func (l *lexer) acceptUntil(valid string) {

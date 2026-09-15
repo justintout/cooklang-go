@@ -10,8 +10,7 @@ type Ingredient struct {
 	Name string
 	Quantity
 
-	raw     string
-	stepPos int
+	raw string
 }
 
 // NewIngredient creates a new Ingredient from an ingredient definition

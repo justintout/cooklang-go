@@ -23,8 +23,6 @@ type Step struct {
 	// DirectionItems are the direction items in this step
 	DirectionItems []DirectionItemer
 	order          []json.Marshaler
-	pos            int
-	recipe         *Recipe
 }
 
 func (s Step) String() string {
@@ -39,29 +37,23 @@ func (s Step) Zero() bool {
 
 // AddIngredient adds a new ingredient to the step
 func (s *Step) AddIngredient(i *Ingredient) {
-	i.stepPos = s.pos
 	s.Ingredients = append(s.Ingredients, i)
 	s.order = append(s.order, i)
 	s.DirectionItems = append(s.DirectionItems, i)
-	s.pos++
 }
 
 // AddCookware adds a new piece of cookware to the step
 func (s *Step) AddCookware(c *Cookware) {
-	c.stepPos = s.pos
 	s.Cookware = append(s.Cookware, c)
 	s.DirectionItems = append(s.DirectionItems, c)
 	s.order = append(s.order, c)
-	s.pos++
 }
 
 // AddTimer adds a new timer to the step
 func (s *Step) AddTimer(t *Timer) {
-	t.stepPos = s.pos
 	s.Timers = append(s.Timers, t)
 	s.DirectionItems = append(s.DirectionItems, t)
 	s.order = append(s.order, t)
-	s.pos++
 }
 
 // AddJoinedText adds text that continues the text before it, as a line break
@@ -79,11 +71,9 @@ func (s *Step) AddJoinedText(t *Text) {
 
 // AddText adds new text to the step
 func (s *Step) AddText(t *Text) {
-	t.stepPos = s.pos
 	s.Text = append(s.Text, t)
 	s.DirectionItems = append(s.DirectionItems, t)
 	s.order = append(s.order, t)
-	s.pos++
 }
 
 // MarshalJSON implements json.Marshaler for Step

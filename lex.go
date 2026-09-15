@@ -8,9 +8,6 @@ const special = "@#~{}\n"
 
 func lexText(l *lexer) stateFn {
 	for {
-		// if l.pos == len(l.input) {
-		// 	break
-		// }
 		// Front matter only counts at the very start of the file; a "---"
 		// line anywhere else is ordinary text.
 		if l.pos == 0 && l.atMetadataFence() {
@@ -180,21 +177,4 @@ func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
 	l.accept("}")
 	l.emit(typ)
 	return lexText
-
 }
-
-/*
-func lexNumber(l *lexer) stateFn {
-	digits := "0123456789"
-	l.acceptRun(digits)
-	if l.accept(".") {
-		l.acceptRun(digits)
-	}
-	if isAlphaNumeric(l.peek()) {
-		l.next()
-		return l.errorf("bad number: %q", l.input[l.start:l.pos])
-	}
-	l.emit(itemNumber)
-	return lexInsideQuantity
-}
-*/

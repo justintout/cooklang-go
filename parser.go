@@ -38,7 +38,7 @@ func Parse(input string) (Recipe, error) {
 }
 
 func parse(input string) (Recipe, error) {
-	_, items := lex("recipe", input)
+	_, items := lex(input)
 	recipe := NewRecipe("recipe")
 	step := &Step{}
 	// A step is a paragraph: a blank line ends it, while a single line break

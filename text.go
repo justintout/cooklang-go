@@ -6,8 +6,6 @@ import "encoding/json"
 type Text struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
-
-	stepPos int
 }
 
 // NewText returns new recipe text

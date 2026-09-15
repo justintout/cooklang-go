@@ -10,8 +10,7 @@ type Timer struct {
 	Name string `json:"name"`
 	Quantity
 
-	raw     string
-	stepPos int
+	raw string
 }
 
 // NewTimer creates a new Timer from a timer definition. A timer without a

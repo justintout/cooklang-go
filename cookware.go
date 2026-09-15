@@ -10,8 +10,7 @@ type Cookware struct {
 	Name string `json:"name"`
 	Quantity
 
-	raw     string
-	stepPos int
+	raw string
 }
 
 // NewCookware creates a cookware from a cookware definition. Default quantity is 1.
