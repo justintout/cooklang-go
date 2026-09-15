@@ -23,7 +23,7 @@ func NewIngredient(source string) *Ingredient {
 	}
 	qs := strings.IndexRune(source, '{')
 	i.Quantity = parseQuantity(source[qs:], "some", -1)
-	i.Name = source[:qs]
+	i.Name = strings.TrimSpace(source[:qs])
 	return &i
 }
 
@@ -36,7 +36,7 @@ func (i Ingredient) DirectionItem() DirectionItem {
 	return DirectionItem{
 		Type:     "ingredient",
 		Name:     i.Name,
-		Quantity: i.S,
+		Quantity: i.Quantity.Canonical(),
 		Units:    i.Units,
 	}
 }

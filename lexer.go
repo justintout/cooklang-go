@@ -109,6 +109,10 @@ func (l *lexer) peekSpecial() rune {
 	p := l.pos
 	for {
 		r := l.next()
+		if r == eof {
+			l.pos = p
+			return eof
+		}
 		if strings.ContainsRune(special, r) {
 			l.pos = p
 			return r
@@ -121,6 +125,16 @@ func (l *lexer) accept(valid string) bool {
 		return true
 	}
 	l.backup()
+	return false
+}
+
+// acceptString consumes a multi-character prefix, unlike accept which matches
+// a single rune against a set of them.
+func (l *lexer) acceptString(prefix string) bool {
+	if strings.HasPrefix(l.input[l.pos:], prefix) {
+		l.pos += len(prefix)
+		return true
+	}
 	return false
 }
 

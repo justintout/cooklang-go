@@ -9,15 +9,11 @@ import (
 	"strings"
 )
 
-var isFraction = regexp.MustCompile(`^([0-9]+\ )?[0-9]+/[0-9]$`)
-
-type scalingType string
-
-const (
-	scalingNone   scalingType = "none"
-	scalingLinear             = "linear"
-	scalingManual             = "manual"
-)
+// fractions matches a fraction with an optional leading whole number, and
+// tolerates spaces around the slash. The numerator and denominator may not
+// start with a zero, which keeps "01/2" as written rather than reading it as
+// one half.
+var fractions = regexp.MustCompile(`^(?:(\d+)\s+)?([1-9]\d*)\s*/\s*([1-9]\d*)$`)
 
 // Quantity is the representation of a quantity for ingredients and cookware,
 // or a duration for a timer in Cooklang.
@@ -27,9 +23,6 @@ type Quantity struct {
 	N     float32
 	S     string
 	Units string
-	// Scaling scalingType
-	// ScaledQuantities []
-	raw string
 }
 
 func (q Quantity) String() string {
@@ -37,6 +30,15 @@ func (q Quantity) String() string {
 		return q.S
 	}
 	return fmt.Sprintf("%s %s", q.S, q.Units)
+}
+
+// Canonical renders the quantity the way the canonical test format does: as
+// the numeric value when the quantity has one, and as written otherwise.
+func (q Quantity) Canonical() string {
+	if q.N < 0 {
+		return q.S
+	}
+	return strconv.FormatFloat(float64(q.N), 'f', -1, 32)
 }
 
 func (q Quantity) MarshalJSON() ([]byte, error) {
@@ -52,44 +54,44 @@ func (q Quantity) MarshalJSON() ([]byte, error) {
 
 // TODO: add *Servings arg for scaling?
 func parseQuantity(source string, defaultS string, defaultN float32) Quantity {
-	q := Quantity{raw: source, S: defaultS, N: defaultN}
-	if source == "" || source == "{}" {
-		return q
-	}
+	q := Quantity{S: defaultS, N: defaultN}
 
 	s := strings.SplitN(strings.Trim(source, "{}"), dividerQuantity, 2)
 	if len(s) > 1 {
-		q.Units = s[1]
+		q.Units = strings.TrimSpace(s[1])
 	}
 
-	if s[0] == "" {
+	amount := strings.TrimSpace(s[0])
+	if amount == "" {
 		return q
 	}
 
-	if v, err := strconv.ParseFloat(s[0], 32); err == nil {
+	if v, err := strconv.ParseFloat(amount, 32); err == nil {
 		q.N = float32(v)
-		q.S = s[0]
+		q.S = amount
 		return q
 	}
 
-	if isFraction.MatchString(s[0]) {
+	if m := fractions.FindStringSubmatch(amount); m != nil {
 		/*
 				_, .---.__c--.
 			(__( )_._( )_`_>  lol ratatouille
 					`~~"  `~"
 		*/
 		r := new(big.Rat)
-		for _, ss := range strings.Split(s[0], " ") {
-			rr := new(big.Rat)
-			rr.SetString(ss)
-			r.Add(r, rr)
+		if m[1] != "" {
+			r.SetString(m[1])
 		}
-		q.N, _ = r.Float32()
-		q.S = s[0]
+		f := new(big.Rat)
+		f.SetString(m[2] + "/" + m[3])
+		q.N, _ = r.Add(r, f).Float32()
+		q.S = amount
 		return q
 	}
 
-	q.S = s[0]
+	// Not a number and not a fraction: keep it as written, and record that
+	// there is no numeric value to fall back on.
+	q.N, q.S = -1, amount
 	return q
 }
 

@@ -60,6 +60,11 @@ func lexText(l *lexer) stateFn {
 			l.accept("\n")
 			l.emit(itemStep)
 			l.lineStart = l.pos
+			// The line is finished. Without this the loop falls through to
+			// l.next(), which consumes the first character of the next line
+			// and stops the prefix checks below from ever seeing a line
+			// start.
+			continue
 		}
 		if l.next() == eof {
 			break
@@ -73,22 +78,22 @@ func lexText(l *lexer) stateFn {
 }
 
 func lexLineComment(l *lexer) stateFn {
-	l.accept(leftLineComment)
+	l.acceptString(leftLineComment)
 	l.acceptUntil("\n")
 	l.emit(itemComment)
 	return lexText
 }
 
 func lexBlockComment(l *lexer) stateFn {
-	l.accept(leftBlockComment)
+	l.acceptString(leftBlockComment)
 	l.acceptUntil(rightBlockComment)
-	l.accept(rightBlockComment)
+	l.acceptString(rightBlockComment)
 	l.emit(itemComment)
 	return lexText
 }
 
 func lexMetadata(l *lexer) stateFn {
-	l.accept(leftMetadata)
+	l.acceptString(leftMetadata)
 	l.acceptUntil("\n")
 	l.emit(itemMetadata)
 	l.accept("\n")
@@ -151,10 +156,14 @@ func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
 		l.emit(typ)
 		return lexText
 	}
-	if l.accept(" ") && l.peekSpecial() != '{' {
-		// single word default amount ingredient
-		l.emit(typ)
-		return lexText
+	if p := l.pos; l.accept(" ") {
+		if l.peekSpecial() != '{' {
+			// single word default amount ingredient: the space is not part
+			// of the name, it belongs to the text that follows
+			l.pos = p
+			l.emit(typ)
+			return lexText
+		}
 	}
 	l.acceptUntil("}")
 	l.accept("}")

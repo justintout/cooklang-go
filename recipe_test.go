@@ -4,6 +4,58 @@ import (
 	"testing"
 )
 
+// A symbol at the start of a line introduces its construct wherever the line
+// falls in the file, not only on the first line, and a file without a
+// trailing newline keeps its last step.
+func TestSymbolsAtLineStart(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		check  func(Recipe) bool
+	}{
+		{
+			"ingredient",
+			"some text\n@salt{1%tsp}\n",
+			func(r Recipe) bool { return len(r.Ingredients["salt"]) == 1 },
+		},
+		{
+			"cookware",
+			"some text\n#bowl{2}\n",
+			func(r Recipe) bool { return len(r.Cookware["bowl"]) == 1 },
+		},
+		{
+			"timer",
+			"some text\n~{5%minutes}\n",
+			func(r Recipe) bool { return len(r.Timers) == 1 },
+		},
+		{
+			"metadata",
+			"some text\n>> sourced: babooshka\n",
+			func(r Recipe) bool { return r.Metadata["sourced"] == "babooshka" },
+		},
+		{
+			"line comment",
+			"some text\n-- a comment\n",
+			func(r Recipe) bool { return len(r.Steps) == 1 },
+		},
+		{
+			"block comment",
+			"some text\n[- a comment -]\n",
+			func(r Recipe) bool { return len(r.Steps) == 1 },
+		},
+		{
+			"last step without a trailing newline",
+			"first\n\nAdd @salt.",
+			func(r Recipe) bool { return len(r.Steps) == 2 },
+		},
+	}
+	for _, tt := range tests {
+		if !tt.check(MustParse(tt.source)) {
+			t.Errorf("%s: %q did not parse as expected: %+v", tt.name, tt.source, MustParse(tt.source))
+		}
+	}
+}
+
 func TestNewIngredient(t *testing.T) {
 	tests := []struct {
 		source   string
@@ -39,11 +91,11 @@ func TestNewCookware(t *testing.T) {
 	}{
 		{
 			"#frying pan{}",
-			Cookware{Name: "frying pan", Quantity: Quantity{N: 1, S: ""}},
+			Cookware{Name: "frying pan", Quantity: Quantity{N: 1, S: "1"}},
 		},
 		{
 			"#Oven",
-			Cookware{Name: "Oven", Quantity: Quantity{N: 1, S: ""}},
+			Cookware{Name: "Oven", Quantity: Quantity{N: 1, S: "1"}},
 		},
 		{
 			"#bowls{3}",

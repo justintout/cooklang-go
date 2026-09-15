@@ -55,12 +55,16 @@ func parse(input string) (Recipe, error) {
 		case itemTimer:
 			step.AddTimer(NewTimer(item.val))
 		case itemStep:
-			// BAD
 			if !step.Zero() {
 				recipe.AddStep(step)
 			}
 			step = &Step{}
 		}
+	}
+	// The last line of a file need not end with a newline, so the trailing
+	// step has to be flushed here as well.
+	if !step.Zero() {
+		recipe.AddStep(step)
 	}
 
 	return recipe, nil

@@ -1,8 +1,8 @@
 package cooklang_test
 
 import (
-	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/justintout/cooklang-go"
@@ -37,35 +37,45 @@ func TestCanonical(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			r := cooklang.MustParse(test.Source)
 
-			_, err := yaml.Marshal(r)
-			if err != nil {
-				t.Errorf("error marshaling recipe: %v", err)
+			if !equalMetadata(r.Metadata, test.Result.Metadata) {
+				t.Errorf("wrong metadata, got: %v, want: %v", r.Metadata, test.Result.Metadata)
 			}
 
-			for tk, tv := range test.Result.Metadata {
-				found := false
-				for k, v := range r.Metadata {
-					if k == tk {
-						found = true
-						if v != tv {
-							t.Errorf("%q value incorrect, got: %v:%v, want: %v:%v", tk, k, v, tk, tv)
-						}
-					}
+			got := make([][]cooklang.DirectionItem, 0, len(r.Steps))
+			for _, s := range r.Steps {
+				step := make([]cooklang.DirectionItem, 0, len(s.DirectionItems))
+				for _, d := range s.DirectionItems {
+					step = append(step, d.DirectionItem())
 				}
-				if !found {
-					t.Errorf("did not find metadata key %q, got: %v, want: %v", tk, r.Metadata, test.Result.Metadata)
-				}
+				got = append(got, step)
 			}
-
-			if len(test.Result.Steps) != len(r.Steps) {
-				fmt.Printf("--- %s\n", name)
-				fmt.Printf("from: %s\n", test.Source)
-				fmt.Printf("got: %+v\n", r.Steps)
-				fmt.Printf("want: %+v\n", test.Result.Steps)
-				fmt.Printf("---\n\n")
-				t.Errorf("wrong number of steps, got: %d, want: %d", len(r.Steps), len(test.Result.Steps))
+			if len(test.Result.Steps) == 0 {
+				test.Result.Steps = [][]cooklang.DirectionItem{}
 			}
-
+			if !reflect.DeepEqual(got, test.Result.Steps) {
+				t.Errorf("wrong steps for source %q\n got: %s\nwant: %s", test.Source, dumpSteps(got), dumpSteps(test.Result.Steps))
+			}
 		})
 	}
+}
+
+// equalMetadata treats a nil map and an empty one as the same thing.
+func equalMetadata(got cooklang.Metadata, want map[string]string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for k, v := range want {
+		if got[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
+func dumpSteps(steps [][]cooklang.DirectionItem) string {
+	b, err := yaml.Marshal(steps)
+	if err != nil {
+		return err.Error()
+	}
+	return "\n" + string(b)
 }

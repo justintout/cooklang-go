@@ -54,10 +54,13 @@ func (r *Recipe) AddStep(s *Step) {
 		r.Cookware[c.Name] = []string{c.Quantity.String()}
 	}
 	for i, t := range s.Timers {
-		if t.Name == "" {
-			t.Name = fmt.Sprintf("timer:%d:%d", s.Number, i)
+		name := t.Name
+		if name == "" {
+			// An unnamed timer still needs a key in the map, but the timer
+			// itself keeps its empty name.
+			name = fmt.Sprintf("timer:%d:%d", s.Number, i)
 		}
-		r.Timers[t.Name] = t.Quantity.String()
+		r.Timers[name] = t.Quantity.String()
 	}
 }
 
@@ -84,7 +87,6 @@ func (r *Recipe) MarshalYAML() (interface{}, error) {
 				return nil, fmt.Errorf("unexpected item type: %v %T", di, di)
 			}
 		}
-		fmt.Printf("- %+v\n", cs)
 		cr.Steps = append(cr.Steps, cs)
 	}
 	y, err := yaml.Marshal(cr)
@@ -113,7 +115,7 @@ func newCanonicalIngredient(i Ingredient) canonicalDirectionItem {
 	return canonicalDirectionItem{
 		Typ:      "ingredient",
 		Name:     i.Name,
-		Quantity: i.Quantity.S,
+		Quantity: i.Quantity.Canonical(),
 		Units:    i.Quantity.Units,
 	}
 }
@@ -122,7 +124,7 @@ func newCanonicalCookware(c Cookware) canonicalDirectionItem {
 	return canonicalDirectionItem{
 		Typ:      "cookware",
 		Name:     c.Name,
-		Quantity: c.Quantity.S,
+		Quantity: c.Quantity.Canonical(),
 	}
 }
 
@@ -130,7 +132,7 @@ func newCanonicalTimer(t Timer) canonicalDirectionItem {
 	return canonicalDirectionItem{
 		Typ:      "timer",
 		Name:     t.Name,
-		Quantity: t.Quantity.S,
+		Quantity: t.Quantity.Canonical(),
 		Units:    t.Quantity.Units,
 	}
 }

@@ -2,7 +2,6 @@ package cooklang
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 )
 
@@ -15,18 +14,24 @@ type Timer struct {
 	stepPos int
 }
 
-// NewTimer creates a new Timer from a timer definition
+// NewTimer creates a new Timer from a timer definition. A timer without a
+// duration, such as "~rest", has an empty quantity.
 func NewTimer(source string) *Timer {
 	t := Timer{raw: source}
 	ns := strings.IndexRune(source, '~') + 1
 	qs := strings.IndexRune(source, '{')
-	t.Name = source[ns:qs]
-	var err error
-	if t.Quantity, err = strictParseQuantity(source[qs:]); err != nil {
-		// TODO: how to handle a parse error here?
-		// preferably the lexer shouldn't emit as a timer so
-		// maybe unnecessary to do much
-		fmt.Printf("invalid quantity for timer %q: %v\n", source, err)
+	if qs == -1 {
+		t.Name = strings.TrimSpace(source[ns:])
+		t.Quantity = Quantity{N: -1}
+		return &t
+	}
+	t.Name = strings.TrimSpace(source[ns:qs])
+	if q, err := strictParseQuantity(source[qs:]); err == nil {
+		t.Quantity = q
+	} else {
+		// A malformed duration is kept as written rather than dropped, and
+		// a library must not print.
+		t.Quantity = parseQuantity(source[qs:], "", -1)
 	}
 	return &t
 }
@@ -41,7 +46,7 @@ func (t Timer) DirectionItem() DirectionItem {
 	return DirectionItem{
 		Type:     "timer",
 		Name:     t.Name,
-		Quantity: t.S,
+		Quantity: t.Quantity.Canonical(),
 		Units:    t.Units,
 	}
 }

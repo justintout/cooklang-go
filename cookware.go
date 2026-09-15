@@ -20,12 +20,12 @@ func NewCookware(source string) *Cookware {
 	ns := strings.IndexRune(source, '#') + 1
 	qs := strings.IndexRune(source, '{')
 	if qs == -1 {
-		c.Name = source[ns:]
-		c.Quantity = Quantity{N: 1}
+		c.Name = strings.TrimSpace(source[ns:])
+		c.Quantity = Quantity{N: 1, S: "1"}
 		return &c
 	}
-	c.Name = source[ns:qs]
-	c.Quantity = parseQuantity(source[qs:], "", 1)
+	c.Name = strings.TrimSpace(source[ns:qs])
+	c.Quantity = parseQuantity(source[qs:], "1", 1)
 	return &c
 }
 
@@ -53,6 +53,6 @@ func (c Cookware) DirectionItem() DirectionItem {
 	return DirectionItem{
 		Type:     "cookware",
 		Name:     c.Name,
-		Quantity: c.S,
+		Quantity: c.Quantity.Canonical(),
 	}
 }
