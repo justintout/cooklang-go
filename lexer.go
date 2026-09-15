@@ -6,6 +6,7 @@ package cooklang
 
 import (
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -136,6 +137,52 @@ func (l *lexer) acceptString(prefix string) bool {
 		return true
 	}
 	return false
+}
+
+// atMetadataFence reports whether the lexer sits on a line that is exactly
+// "---", the delimiter of the YAML front matter block.
+func (l *lexer) atMetadataFence() bool {
+	if l.pos != l.lineStart || !strings.HasPrefix(l.input[l.pos:], metadataFence) {
+		return false
+	}
+	rest := l.input[l.pos+len(metadataFence):]
+	return rest == "" || strings.HasPrefix(rest, "\n")
+}
+
+// atLineComment reports whether the lexer is on a line comment. A run of
+// three or more dashes is not one, so that the metadata fence stays text
+// wherever it appears away from the start of a file.
+func (l *lexer) atLineComment() bool {
+	if !strings.HasPrefix(l.input[l.pos:], leftLineComment) {
+		return false
+	}
+	rest := l.input[l.pos+len(leftLineComment):]
+	if strings.HasPrefix(rest, "-") {
+		return false
+	}
+	// the scan reaches the second dash of a longer run, so check behind too
+	return l.pos == 0 || l.input[l.pos-1] != '-'
+}
+
+// nameless reports whether a marker is followed by nothing that could be a
+// name, in which case the marker is plain text.
+func (l *lexer) nameless() bool {
+	r := l.peek()
+	return r == eof || unicode.IsSpace(r)
+}
+
+// cutAtWordEnd backs up to the first punctuation or space in the word
+// scanned since floor, which is where a name that is not delimited by braces
+// ends. It reports whether any name is left, which it is not when the word
+// opens with punctuation.
+func (l *lexer) cutAtWordEnd(floor int) bool {
+	for i, r := range l.input[floor:l.pos] {
+		if unicode.IsPunct(r) || unicode.IsSpace(r) {
+			l.pos = floor + i
+			return i > 0
+		}
+	}
+	return l.pos > floor
 }
 
 func (l *lexer) acceptRun(valid string) {

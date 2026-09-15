@@ -29,11 +29,6 @@ func TestSymbolsAtLineStart(t *testing.T) {
 			func(r Recipe) bool { return len(r.Timers) == 1 },
 		},
 		{
-			"metadata",
-			"some text\n>> sourced: babooshka\n",
-			func(r Recipe) bool { return r.Metadata["sourced"] == "babooshka" },
-		},
-		{
 			"line comment",
 			"some text\n-- a comment\n",
 			func(r Recipe) bool { return len(r.Steps) == 1 },

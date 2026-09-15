@@ -11,12 +11,13 @@ func lexText(l *lexer) stateFn {
 		// if l.pos == len(l.input) {
 		// 	break
 		// }
-		if strings.HasPrefix(l.input[l.pos:], leftMetadata) && l.pos == l.lineStart {
-			if l.pos > l.start {
-				l.emit(itemText)
-			}
+		// Front matter only counts at the very start of the file; a "---"
+		// line anywhere else is ordinary text.
+		if l.pos == 0 && l.atMetadataFence() {
+			l.pos += len(metadataFence)
+			l.accept("\n")
 			l.start = l.pos
-			return lexMetadata
+			return lexFrontMatter
 		}
 		if strings.HasPrefix(l.input[l.pos:], leftIngredient) {
 			if l.pos > l.start {
@@ -39,7 +40,7 @@ func lexText(l *lexer) stateFn {
 			l.start = l.pos
 			return lexTimer
 		}
-		if strings.HasPrefix(l.input[l.pos:], leftLineComment) {
+		if l.atLineComment() {
 			if l.pos > l.start {
 				l.emit(itemText)
 			}
@@ -92,58 +93,60 @@ func lexBlockComment(l *lexer) stateFn {
 	return lexText
 }
 
-func lexMetadata(l *lexer) stateFn {
-	l.acceptString(leftMetadata)
-	l.acceptUntil("\n")
-	l.emit(itemMetadata)
-	l.accept("\n")
-	l.ignore()
-	l.lineStart = l.pos
-	return lexText
+// lexFrontMatter reads the YAML front matter block that a recipe may open
+// with: a "---" line, then one "key: value" line per metadata entry, closed
+// by another "---" line. Each entry is emitted as an itemMetadata.
+func lexFrontMatter(l *lexer) stateFn {
+	for {
+		if l.atMetadataFence() {
+			l.pos += len(metadataFence)
+			l.start = l.pos
+			l.lineStart = l.pos
+			return lexText
+		}
+		if strings.HasPrefix(l.input[l.pos:], "\n") {
+			l.accept("\n")
+			if l.pos > l.start {
+				l.emit(itemMetadata)
+			}
+			l.lineStart = l.pos
+			continue
+		}
+		if l.next() == eof {
+			if l.pos > l.start {
+				l.emit(itemMetadata)
+			}
+			l.emit(itemEOF)
+			return nil
+		}
+	}
 }
 
 func lexIngredient(l *lexer) stateFn {
-	l.accept(leftIngredient)
-	return lexQuantifiedItem(l, itemIngredient)
+	return lexMarker(l, leftIngredient, itemIngredient)
 }
 
 func lexCookware(l *lexer) stateFn {
-	l.accept(leftCookware)
-	return lexQuantifiedItem(l, itemCookware)
+	return lexMarker(l, leftCookware, itemCookware)
 }
 
 func lexTimer(l *lexer) stateFn {
-	l.accept(leftTimer)
-	// Timers require braces per spec: ~{qty%unit} or ~name{qty%unit}
-	// If no brace found before other special chars or newline, emit as text
-	l.acceptUntil(" " + leftQuantity + "\n")
-	if l.accept(leftQuantity) {
-		l.acceptUntil(rightQuantity)
-		l.accept(rightQuantity)
-		l.emit(itemTimer)
-		return lexText
-	}
-	if l.peek() == '\n' {
-		// No braces, hit newline - not a valid timer
+	return lexMarker(l, leftTimer, itemTimer)
+}
+
+// lexMarker reads a "name", "#name" or "~name" item. A marker with no name
+// after it is ordinary text.
+func lexMarker(l *lexer, marker string, typ itemType) stateFn {
+	l.acceptString(marker)
+	if l.nameless() {
 		l.emit(itemText)
 		return lexText
 	}
-	if l.accept(" ") {
-		// Check if next special char is { (multi-word name) or something else
-		if l.peekSpecial() == '{' {
-			// Multi-word timer name like ~boil eggs{3%minutes}
-			l.acceptUntil(rightQuantity)
-			l.accept(rightQuantity)
-			l.emit(itemTimer)
-			return lexText
-		}
-	}
-	// No braces before other special char - not a valid timer, emit as text
-	l.emit(itemText)
-	return lexText
+	return lexQuantifiedItem(l, typ)
 }
 
 func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
+	nameStart := l.pos
 	l.acceptUntil(" " + leftQuantity + "\n")
 	if l.accept(leftQuantity) {
 		l.acceptUntil(rightQuantity)
@@ -151,8 +154,12 @@ func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
 		l.emit(typ)
 		return lexText
 	}
-	if l.peek() == '\n' {
+	if l.peek() == '\n' || l.peek() == eof {
 		// single word default amount ingredient
+		if !l.cutAtWordEnd(nameStart) {
+			l.emit(itemText)
+			return lexText
+		}
 		l.emit(typ)
 		return lexText
 	}
@@ -161,6 +168,10 @@ func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
 			// single word default amount ingredient: the space is not part
 			// of the name, it belongs to the text that follows
 			l.pos = p
+			if !l.cutAtWordEnd(nameStart) {
+				l.emit(itemText)
+				return lexText
+			}
 			l.emit(typ)
 			return lexText
 		}

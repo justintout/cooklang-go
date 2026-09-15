@@ -5,9 +5,9 @@ import "strings"
 // Metadata represents recipe metadata
 type Metadata map[string]string
 
-// Add inserts a new metadata key/value pair from a metadata definition
+// Add inserts a new metadata key/value pair from a front matter line
 func (m Metadata) Add(input string) {
-	input = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(input), ">>"))
+	input = strings.TrimSpace(input)
 	s := strings.SplitN(input, ":", 2)
 	if len(s) == 1 {
 		s = append(s, "")

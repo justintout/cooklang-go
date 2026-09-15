@@ -64,6 +64,19 @@ func (s *Step) AddTimer(t *Timer) {
 	s.pos++
 }
 
+// AddJoinedText adds text that continues the text before it, as a line break
+// inside a step does, extending the previous text rather than starting a new
+// direction item.
+func (s *Step) AddJoinedText(t *Text) {
+	if n := len(s.order); n > 0 {
+		if prev, ok := s.order[n-1].(*Text); ok {
+			prev.Value += t.Value
+			return
+		}
+	}
+	s.AddText(t)
+}
+
 // AddText adds new text to the step
 func (s *Step) AddText(t *Text) {
 	t.stepPos = s.pos
