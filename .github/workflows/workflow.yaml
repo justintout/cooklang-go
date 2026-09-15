@@ -1,10 +1,12 @@
 name: CI
 
-on: 
-  push: 
+on:
+  push:
     branches: [ main ]
-    paths: 
-      - '!**/*.md'
+    # The previous single negative pattern under paths kept this workflow
+    # from running on main; the equivalent paths-ignore does not.
+    paths-ignore:
+      - '**/*.md'
   pull_request:
     branches: [ main ]
 
@@ -12,10 +14,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-go@v3
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v7
       with:
-        go-version: 1.18.x
-    - uses: actions/checkout@v3
+        go-version-file: go.mod
     - name: run tests
-      run: |
-        go test -run '^[^TestCanonical]'
+      # '^[^TestCanonical]' is a negated character class, and every test name
+      # starts with a letter in it, so the old -run selected nothing.
+      run: go test -skip '^TestCanonical$' ./...

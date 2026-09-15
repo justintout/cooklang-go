@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/justintout/cooklang-go"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 type canonicalTest struct {
