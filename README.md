@@ -7,6 +7,11 @@
 
 See the [`pcook` executable](./cmd/pcook/) for usage.
 
+Recipes written for an older version of the spec need
+[`cookupgrade`](./cmd/cookupgrade/) first: metadata moved into YAML front
+matter, and a step became a paragraph rather than a line, so a version 5
+recipe separates its steps with blank lines.
+
 ## Development
 
 Issues and pull requests welcome. 
