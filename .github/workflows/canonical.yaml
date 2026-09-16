@@ -5,9 +5,13 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  # Also called by ci.yaml, which gates a release on this suite. Keeping it in
+  # its own file is what gives it a badge of its own; badges are per workflow,
+  # not per job.
+  workflow_call:
 
 jobs:
-  test:
+  canonical:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
