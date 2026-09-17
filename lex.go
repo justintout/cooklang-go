@@ -82,10 +82,17 @@ func lexLineComment(l *lexer) stateFn {
 	return lexText
 }
 
+// lexBlockComment reads a "[- ... -]" comment. The text of one may hold
+// dashes and brackets, so the scan looks for the two characters "-]" rather
+// than for the first of either; a comment left open runs to the end of the
+// input.
 func lexBlockComment(l *lexer) stateFn {
 	l.acceptString(leftBlockComment)
-	l.acceptUntil(rightBlockComment)
-	l.acceptString(rightBlockComment)
+	if i := strings.Index(l.input[l.pos:], rightBlockComment); i >= 0 {
+		l.pos += i + len(rightBlockComment)
+	} else {
+		l.pos = len(l.input)
+	}
 	l.emit(itemComment)
 	return lexText
 }
