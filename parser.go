@@ -14,13 +14,29 @@ func MustParseFile(path string) Recipe {
 	return r
 }
 
-// ParseFile parses the file at the given path as a Cooklang recipe
+// ParseFile parses the file at the given path as a Cooklang recipe of the
+// latest spec version
 func ParseFile(path string) (Recipe, error) {
+	return ParseFileSpec(path, latest)
+}
+
+// MustParseFileSpec calls ParseFileSpec and panics on error
+func MustParseFileSpec(path string, spec Spec) Recipe {
+	r, err := ParseFileSpec(path, spec)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+// ParseFileSpec parses the file at the given path as a recipe of the given
+// spec version
+func ParseFileSpec(path string, spec Spec) (Recipe, error) {
 	c, err := os.ReadFile(path)
 	if err != nil {
 		return Recipe{}, fmt.Errorf("failed to parse %q: %v", path, err)
 	}
-	return parse(string(c))
+	return parse(string(c), spec)
 }
 
 // MustParse calls Parse and panics on error
@@ -32,17 +48,37 @@ func MustParse(input string) Recipe {
 	return r
 }
 
-// Parse parses the input string as a Cooklang recipe
+// Parse parses the input string as a Cooklang recipe of the latest spec
+// version
 func Parse(input string) (Recipe, error) {
-	return parse(input)
+	return parse(input, latest)
 }
 
-func parse(input string) (Recipe, error) {
-	_, items := lex(input)
+// MustParseSpec calls ParseSpec and panics on error
+func MustParseSpec(input string, spec Spec) Recipe {
+	r, err := ParseSpec(input, spec)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+// ParseSpec parses the input string as a recipe of the given spec version
+func ParseSpec(input string, spec Spec) (Recipe, error) {
+	return parse(input, spec)
+}
+
+func parse(input string, spec Spec) (Recipe, error) {
+	if !spec.known() {
+		return Recipe{}, fmt.Errorf("unknown spec version %d", int(spec))
+	}
+	_, items := lex(input, spec)
 	recipe := NewRecipe("recipe")
 	step := &Step{}
 	// A step is a paragraph: a blank line ends it, while a single line break
-	// inside it renders as a space and keeps the step going.
+	// inside it renders as a space and keeps the step going. Before version 7
+	// every line was its own step, so there a newline ends the step instead.
+	lineSteps := spec == SpecV5
 	lineBreak := false
 
 	flush := func() {
@@ -79,7 +115,7 @@ func parse(input string) (Recipe, error) {
 				// a blank line between steps, or before any content
 				continue
 			}
-			if lineBreak {
+			if lineBreak || lineSteps {
 				flush()
 				continue
 			}

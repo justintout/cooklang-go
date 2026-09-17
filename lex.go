@@ -10,11 +10,26 @@ func lexText(l *lexer) stateFn {
 	for {
 		// Front matter only counts at the very start of the file; a "---"
 		// line anywhere else is ordinary text.
-		if l.pos == 0 && l.atMetadataFence() {
+		if l.spec == SpecV7 && l.pos == 0 && l.atMetadataFence() {
 			l.pos += len(metadataFence)
 			l.accept("\n")
 			l.start = l.pos
+			// The fence counts as a line of its own, or lexFrontMatter cannot
+			// recognize a closing fence that follows it immediately.
+			l.lineStart = l.pos
 			return lexFrontMatter
+		}
+		// Version 5 metadata is a ">> key: value" line, wherever it appears.
+		// The marker is dropped here so that the token holds the same
+		// "key: value" text that front matter holds under version 7.
+		if l.spec == SpecV5 && l.pos == l.lineStart && strings.HasPrefix(l.input[l.pos:], leftMetadata) {
+			l.pos += len(leftMetadata)
+			l.start = l.pos
+			l.acceptUntil("\n")
+			if l.pos > l.start {
+				l.emit(itemMetadata)
+			}
+			continue
 		}
 		if strings.HasPrefix(l.input[l.pos:], leftIngredient) {
 			if l.pos > l.start {

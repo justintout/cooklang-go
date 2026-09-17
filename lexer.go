@@ -36,6 +36,7 @@ type item struct {
 
 type lexer struct {
 	input     string
+	spec      Spec
 	start     int
 	lineStart int
 	pos       int
@@ -43,9 +44,10 @@ type lexer struct {
 	items     chan item
 }
 
-func lex(input string) (*lexer, chan item) {
+func lex(input string, spec Spec) (*lexer, chan item) {
 	l := &lexer{
 		input: input,
+		spec:  spec,
 		items: make(chan item),
 	}
 	go l.run()
@@ -112,14 +114,16 @@ func (l *lexer) acceptString(prefix string) bool {
 	return false
 }
 
-// atMetadataFence reports whether the lexer sits on a line that is exactly
-// "---", the delimiter of the YAML front matter block.
+// atFence reports whether s opens with a line that is exactly "---", the
+// delimiter of the YAML front matter block.
+func atFence(s string) bool {
+	rest, ok := strings.CutPrefix(s, metadataFence)
+	return ok && (rest == "" || strings.HasPrefix(rest, "\n"))
+}
+
+// atMetadataFence reports whether the lexer sits on a front matter fence.
 func (l *lexer) atMetadataFence() bool {
-	if l.pos != l.lineStart || !strings.HasPrefix(l.input[l.pos:], metadataFence) {
-		return false
-	}
-	rest := l.input[l.pos+len(metadataFence):]
-	return rest == "" || strings.HasPrefix(rest, "\n")
+	return l.pos == l.lineStart && atFence(l.input[l.pos:])
 }
 
 // atLineComment reports whether the lexer is on a line comment. A run of

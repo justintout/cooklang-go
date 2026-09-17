@@ -22,38 +22,53 @@ type canonicalTests struct {
 	Tests   map[string]canonicalTest
 }
 
+// TestCanonical runs the official spec tests. canonical.yaml is the current
+// suite; the other two are what the official tests held while versions 5 and
+// 6 were current, kept so the older rules stay honest. Both of those read
+// under the version 5 rules, which is the claim their file names make.
 func TestCanonical(t *testing.T) {
-	b, err := os.ReadFile("canonical.yaml")
-	if err != nil {
-		panic("failed to read canonical.yaml: " + err.Error())
+	suites := []struct {
+		file string
+		spec cooklang.Spec
+	}{
+		{"canonical.yaml", cooklang.SpecV7},
+		{"canonical-v6.yaml", cooklang.SpecV5},
+		{"canonical-v5.yaml", cooklang.SpecV5},
 	}
-	var tests canonicalTests
-	err = yaml.Unmarshal(b, &tests)
-	if err != nil {
-		panic("failed to unmarshal tests: " + err.Error())
-	}
-	t.Logf("canonical tests version %s\n", tests.Version)
-	for name, test := range tests.Tests {
-		t.Run(name, func(t *testing.T) {
-			r := cooklang.MustParse(test.Source)
+	for _, suite := range suites {
+		t.Run(suite.file, func(t *testing.T) {
+			b, err := os.ReadFile(suite.file)
+			if err != nil {
+				t.Fatalf("failed to read %s: %v", suite.file, err)
+			}
+			var tests canonicalTests
+			if err := yaml.Unmarshal(b, &tests); err != nil {
+				t.Fatalf("failed to unmarshal %s: %v", suite.file, err)
+			}
+			t.Logf("canonical tests version %s\n", tests.Version)
+			for name, test := range tests.Tests {
+				t.Run(name, func(t *testing.T) {
+					r := cooklang.MustParseSpec(test.Source, suite.spec)
 
-			if !equalMetadata(r.Metadata, test.Result.Metadata) {
-				t.Errorf("wrong metadata, got: %v, want: %v", r.Metadata, test.Result.Metadata)
-			}
+					if !equalMetadata(r.Metadata, test.Result.Metadata) {
+						t.Errorf("wrong metadata, got: %v, want: %v", r.Metadata, test.Result.Metadata)
+					}
 
-			got := make([][]cooklang.DirectionItem, 0, len(r.Steps))
-			for _, s := range r.Steps {
-				step := make([]cooklang.DirectionItem, 0, len(s.DirectionItems))
-				for _, d := range s.DirectionItems {
-					step = append(step, d.DirectionItem())
-				}
-				got = append(got, step)
-			}
-			if len(test.Result.Steps) == 0 {
-				test.Result.Steps = [][]cooklang.DirectionItem{}
-			}
-			if !reflect.DeepEqual(got, test.Result.Steps) {
-				t.Errorf("wrong steps for source %q\n got: %s\nwant: %s", test.Source, dumpSteps(got), dumpSteps(test.Result.Steps))
+					got := make([][]cooklang.DirectionItem, 0, len(r.Steps))
+					for _, s := range r.Steps {
+						step := make([]cooklang.DirectionItem, 0, len(s.DirectionItems))
+						for _, d := range s.DirectionItems {
+							step = append(step, d.DirectionItem())
+						}
+						got = append(got, step)
+					}
+					if len(test.Result.Steps) == 0 {
+						test.Result.Steps = [][]cooklang.DirectionItem{}
+					}
+					if !reflect.DeepEqual(got, test.Result.Steps) {
+						t.Errorf("wrong steps for source %q\n got: %s\nwant: %s", test.Source, dumpSteps(got), dumpSteps(test.Result.Steps))
+					}
+				})
 			}
 		})
 	}

@@ -7,6 +7,7 @@ const leftBlockComment = "[-"
 const rightBlockComment = "-]"
 
 const metadataFence = "---"
+const leftMetadata = ">>"
 
 const leftIngredient = "@"
 const leftCookware = "#"

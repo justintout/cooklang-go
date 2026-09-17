@@ -1,9 +1,12 @@
 package main
 
 import (
+	"os"
+	"reflect"
 	"testing"
 
 	"github.com/justintout/cooklang-go"
+	"go.yaml.in/yaml/v3"
 )
 
 func TestUpgrade(t *testing.T) {
@@ -97,4 +100,55 @@ func TestUpgradeKeepsTheRecipe(t *testing.T) {
 	if len(r.Ingredients["eggs"]) != 1 || len(r.Cookware["bowl"]) != 1 {
 		t.Errorf("direction items lost, got ingredients: %v cookware: %v", r.Ingredients, r.Cookware)
 	}
+}
+
+// TestUpgradeReadsTheSameV5AndV7 runs every case of the official version 5
+// tests through the rewrite and checks that version 7 reads the result the way
+// version 5 read the source. That is the contract of both the rewrite and the
+// parser's version 5 mode, so they are held to it together.
+func TestUpgradeReadsTheSameV5AndV7(t *testing.T) {
+	b, err := os.ReadFile("../../canonical-v5.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var tests struct {
+		Tests map[string]struct {
+			Source string
+		}
+	}
+	if err := yaml.Unmarshal(b, &tests); err != nil {
+		t.Fatal(err)
+	}
+	if len(tests.Tests) == 0 {
+		t.Fatal("no tests found in canonical-v5.yaml")
+	}
+	for name, tt := range tests.Tests {
+		t.Run(name, func(t *testing.T) {
+			out, err := upgrade(tt.Source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			before := cooklang.MustParseSpec(tt.Source, cooklang.SpecV5)
+			after := cooklang.MustParseSpec(out, cooklang.SpecV7)
+			if !reflect.DeepEqual(map[string]string(before.Metadata), map[string]string(after.Metadata)) {
+				t.Errorf("metadata changed by the rewrite:\nbefore: %v\nafter: %v", before.Metadata, after.Metadata)
+			}
+			if b, a := items(before), items(after); !reflect.DeepEqual(b, a) {
+				t.Errorf("steps changed by the rewrite of %q\nbefore: %v\nafter: %v", tt.Source, b, a)
+			}
+		})
+	}
+}
+
+// items flattens the steps of a recipe for comparison.
+func items(r cooklang.Recipe) [][]cooklang.DirectionItem {
+	out := make([][]cooklang.DirectionItem, 0, len(r.Steps))
+	for _, s := range r.Steps {
+		step := make([]cooklang.DirectionItem, 0, len(s.DirectionItems))
+		for _, d := range s.DirectionItems {
+			step = append(step, d.DirectionItem())
+		}
+		out = append(out, step)
+	}
+	return out
 }
