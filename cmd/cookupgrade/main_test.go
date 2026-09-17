@@ -37,6 +37,26 @@ func TestUpgrade(t *testing.T) {
 			"one\n>> k: v\ntwo\n",
 			"---\nk: v\n---\n\none\n\ntwo\n",
 		},
+		{
+			"a block comment spans lines, so it hides the metadata inside it",
+			"[- notes\n>> k: v\n-]\nAdd @salt.\n",
+			"[- notes\n\n>> k: v\n\n-]\n\nAdd @salt.\n",
+		},
+		{
+			"a block comment runs to the first -], so an inner dash hides nothing",
+			"[- 9-inch pan\n>> k: v\n-]\nAdd @salt.\n",
+			"[- 9-inch pan\n\n>> k: v\n\n-]\n\nAdd @salt.\n",
+		},
+		{
+			"a block comment that closed hides nothing",
+			"[- note -]\n>> k: v\nAdd @salt.\n",
+			"---\nk: v\n---\n\n[- note -]\n\nAdd @salt.\n",
+		},
+		{
+			"a bracket inside a line comment opens no block comment",
+			"-- see [- here\n>> k: v\n",
+			"---\nk: v\n---\n\n-- see [- here\n",
+		},
 	}
 	for _, tt := range tests {
 		got, err := upgrade(tt.in)

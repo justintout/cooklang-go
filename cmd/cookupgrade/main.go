@@ -17,8 +17,11 @@ import (
 )
 
 const (
-	fence      = "---"
-	metadataIn = ">>"
+	fence        = "---"
+	metadataIn   = ">>"
+	lineComment  = "--"
+	blockComment = "[-"
+	blockEnd     = "-]"
 )
 
 func main() {
@@ -56,8 +59,11 @@ func upgrade(input string) (string, error) {
 
 	var front []string
 	var body []string
+	inComment := false
 	for _, line := range lines {
-		if entry, ok := metadataLine(line); ok {
+		startsInComment := inComment
+		inComment = scanComments(line, inComment)
+		if entry, ok := metadataLine(line); ok && !startsInComment {
 			front = append(front, entry)
 			continue
 		}
@@ -81,6 +87,33 @@ func metadataLine(line string) (string, bool) {
 		return "", false
 	}
 	return strings.TrimSpace(strings.TrimPrefix(line, metadataIn)), true
+}
+
+// scanComments reports whether a line ends inside a block comment, given
+// whether it began inside one. A block comment runs from "[-" to the first
+// "-]" and outlives its line, so a ">>" between the two is comment text and
+// not metadata. A line comment ends at the newline, so it only hides a "[-"
+// that shares its line.
+func scanComments(line string, inComment bool) bool {
+	for i := 0; i < len(line); {
+		if inComment {
+			j := strings.Index(line[i:], blockEnd)
+			if j < 0 {
+				return true
+			}
+			inComment = false
+			i += j + len(blockEnd)
+			continue
+		}
+		blockAt := strings.Index(line[i:], blockComment)
+		lineAt := strings.Index(line[i:], lineComment)
+		if blockAt < 0 || (lineAt >= 0 && lineAt < blockAt) {
+			return false
+		}
+		inComment = true
+		i += blockAt + len(blockComment)
+	}
+	return inComment
 }
 
 // separated puts a blank line between each pair of lines and drops the blank
