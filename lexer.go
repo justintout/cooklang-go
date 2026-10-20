@@ -21,6 +21,9 @@ const (
 	itemComment
 	itemMetadata
 	itemStep
+	itemSection
+	itemNote
+	itemLineBreak
 	itemIngredient
 	//
 	itemCookware
@@ -151,15 +154,56 @@ func (l *lexer) nameless() bool {
 // cutAtWordEnd backs up to the first punctuation or space in the word
 // scanned since floor, which is where a name that is not delimited by braces
 // ends. It reports whether any name is left, which it is not when the word
-// opens with punctuation.
+// opens with punctuation. Relative recipe paths opening with "./" or "../"
+// keep their path separators and internal dots, dashes and underscores.
 func (l *lexer) cutAtWordEnd(floor int) bool {
-	for i, r := range l.input[floor:l.pos] {
+	word := l.input[floor:l.pos]
+	if strings.HasPrefix(word, "./") || strings.HasPrefix(word, "../") {
+		for i, r := range word {
+			if unicode.IsSpace(r) {
+				l.pos = floor + i
+				return i > 0
+			}
+			if unicode.IsPunct(r) {
+				if r == '/' || r == '-' || r == '_' {
+					continue
+				}
+				if r == '.' && i+1 < len(word) {
+					nextRune, _ := utf8.DecodeRuneInString(word[i+1:])
+					if !unicode.IsSpace(nextRune) && (!unicode.IsPunct(nextRune) || nextRune == '/' || nextRune == '.') {
+						continue
+					}
+				}
+				l.pos = floor + i
+				return i > 0
+			}
+		}
+		return l.pos > floor
+	}
+	for i, r := range word {
 		if unicode.IsPunct(r) || unicode.IsSpace(r) {
 			l.pos = floor + i
 			return i > 0
 		}
 	}
 	return l.pos > floor
+}
+
+// acceptPreparation consumes a "(...)" preparation block immediately following
+// an ingredient when the closing parenthesis appears on the same line.
+func (l *lexer) acceptPreparation() {
+	if !strings.HasPrefix(l.input[l.pos:], leftPreparation) {
+		return
+	}
+	rest := l.input[l.pos+len(leftPreparation):]
+	closeIdx := strings.Index(rest, rightPreparation)
+	if closeIdx < 0 {
+		return
+	}
+	if nlIdx := strings.Index(rest, "\n"); nlIdx >= 0 && nlIdx < closeIdx {
+		return
+	}
+	l.pos += len(leftPreparation) + closeIdx + len(rightPreparation)
 }
 
 func (l *lexer) acceptUntil(valid string) {

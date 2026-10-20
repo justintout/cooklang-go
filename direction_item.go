@@ -5,9 +5,11 @@ type DirectionItemer interface {
 }
 
 type DirectionItem struct {
-	Type     string
-	Name     string `yaml:"name,omitempty"`
-	Quantity string `yaml:"quantity,omitempty"`
-	Units    string `yaml:"units,omitempty"`
-	Value    string `yaml:"value,omitempty"`
+	Type        string
+	Name        string `yaml:"name,omitempty"`
+	Quantity    string `yaml:"quantity,omitempty"`
+	Units       string `yaml:"units,omitempty"`
+	Value       string `yaml:"value,omitempty"`
+	Optional    bool   `yaml:"optional,omitempty"`
+	Preparation string `yaml:"preparation,omitempty"`
 }

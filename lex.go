@@ -31,6 +31,25 @@ func lexText(l *lexer) stateFn {
 			}
 			continue
 		}
+		if l.pos == l.lineStart && strings.HasPrefix(l.input[l.pos:], leftSection) {
+			l.start = l.pos
+			return lexSection
+		}
+		if l.pos == l.lineStart && strings.HasPrefix(l.input[l.pos:], leftNote) && !strings.HasPrefix(l.input[l.pos:], leftMetadata) {
+			l.start = l.pos
+			return lexNote
+		}
+		if strings.HasPrefix(l.input[l.pos:], lineBreakMarker+"\n") || strings.HasPrefix(l.input[l.pos:], lineBreakMarker+"\r\n") {
+			if l.pos > l.start {
+				l.emit(itemText)
+			}
+			l.acceptString(lineBreakMarker)
+			l.accept("\r")
+			l.accept("\n")
+			l.emit(itemLineBreak)
+			l.lineStart = l.pos
+			continue
+		}
 		if strings.HasPrefix(l.input[l.pos:], leftIngredient) {
 			if l.pos > l.start {
 				l.emit(itemText)
@@ -113,11 +132,14 @@ func lexBlockComment(l *lexer) stateFn {
 }
 
 // lexFrontMatter reads the YAML front matter block that a recipe may open
-// with: a "---" line, then one "key: value" line per metadata entry, closed
-// by another "---" line. Each entry is emitted as an itemMetadata.
+// with: a "---" line, then YAML metadata content, closed by another "---"
+// line. The front matter body is emitted as an itemMetadata token.
 func lexFrontMatter(l *lexer) stateFn {
 	for {
 		if l.atMetadataFence() {
+			if l.pos > l.start {
+				l.emit(itemMetadata)
+			}
 			l.pos += len(metadataFence)
 			l.start = l.pos
 			l.lineStart = l.pos
@@ -125,9 +147,6 @@ func lexFrontMatter(l *lexer) stateFn {
 		}
 		if strings.HasPrefix(l.input[l.pos:], "\n") {
 			l.accept("\n")
-			if l.pos > l.start {
-				l.emit(itemMetadata)
-			}
 			l.lineStart = l.pos
 			continue
 		}
@@ -139,6 +158,39 @@ func lexFrontMatter(l *lexer) stateFn {
 			return nil
 		}
 	}
+}
+
+func lexSection(l *lexer) stateFn {
+	for l.peek() != '\n' && l.peek() != eof {
+		if l.atLineComment() || strings.HasPrefix(l.input[l.pos:], leftBlockComment) {
+			break
+		}
+		l.next()
+	}
+	val := strings.TrimSpace(l.input[l.start:l.pos])
+	val = strings.Trim(val, leftSection)
+	val = strings.TrimSpace(val)
+	l.items <- item{itemSection, val}
+	l.start = l.pos
+	return lexText
+}
+
+func lexNote(l *lexer) stateFn {
+	l.acceptString(leftNote)
+	for l.accept(" \t") {
+	}
+	l.start = l.pos
+	for l.peek() != '\n' && l.peek() != eof {
+		if strings.HasPrefix(l.input[l.pos:], lineBreakMarker+"\n") || strings.HasPrefix(l.input[l.pos:], lineBreakMarker+"\r\n") {
+			break
+		}
+		if l.atLineComment() || strings.HasPrefix(l.input[l.pos:], leftBlockComment) {
+			break
+		}
+		l.next()
+	}
+	l.emit(itemNote)
+	return lexText
 }
 
 func lexIngredient(l *lexer) stateFn {
@@ -153,10 +205,13 @@ func lexTimer(l *lexer) stateFn {
 	return lexMarker(l, leftTimer, itemTimer)
 }
 
-// lexMarker reads a "name", "#name" or "~name" item. A marker with no name
+// lexMarker reads a "@name", "#name" or "~name" item. A marker with no name
 // after it is ordinary text.
 func lexMarker(l *lexer, marker string, typ itemType) stateFn {
 	l.acceptString(marker)
+	if typ == itemIngredient || typ == itemCookware {
+		l.accept(optionalMarker)
+	}
 	if l.nameless() {
 		l.emit(itemText)
 		return lexText
@@ -170,6 +225,9 @@ func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
 	if l.accept(leftQuantity) {
 		l.acceptUntil(rightQuantity)
 		l.accept(rightQuantity)
+		if typ == itemIngredient {
+			l.acceptPreparation()
+		}
 		l.emit(typ)
 		return lexText
 	}
@@ -178,6 +236,9 @@ func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
 		if !l.cutAtWordEnd(nameStart) {
 			l.emit(itemText)
 			return lexText
+		}
+		if typ == itemIngredient {
+			l.acceptPreparation()
 		}
 		l.emit(typ)
 		return lexText
@@ -191,12 +252,18 @@ func lexQuantifiedItem(l *lexer, typ itemType) stateFn {
 				l.emit(itemText)
 				return lexText
 			}
+			if typ == itemIngredient {
+				l.acceptPreparation()
+			}
 			l.emit(typ)
 			return lexText
 		}
 	}
 	l.acceptUntil("}")
 	l.accept("}")
+	if typ == itemIngredient {
+		l.acceptPreparation()
+	}
 	l.emit(typ)
 	return lexText
 }
