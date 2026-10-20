@@ -2,15 +2,59 @@ package cooklang
 
 import (
 	"fmt"
+	"strings"
 
 	"go.yaml.in/yaml/v3"
 )
 
+// Section represents a recipe section introduced by "=" headers.
+type Section struct {
+	Name  string  `json:"name" yaml:"name"`
+	Steps []*Step `json:"steps,omitempty" yaml:"steps,omitempty"`
+	Notes []*Note `json:"notes,omitempty" yaml:"notes,omitempty"`
+}
+
+// NewSection creates a new Section with the given name, trimming any leading or
+// trailing "=" characters and whitespace.
+func NewSection(name string) *Section {
+	name = strings.TrimSpace(name)
+	name = strings.Trim(name, leftSection)
+	name = strings.TrimSpace(name)
+	return &Section{
+		Name:  name,
+		Steps: make([]*Step, 0),
+		Notes: make([]*Note, 0),
+	}
+}
+
+func (s Section) String() string {
+	return s.Name
+}
+
+// Note represents a recipe note or background block introduced by ">".
+type Note struct {
+	Value   string `json:"value" yaml:"value"`
+	Section string `json:"section,omitempty" yaml:"section,omitempty"`
+}
+
+// NewNote creates a new Note with the given text value.
+func NewNote(value string) *Note {
+	return &Note{
+		Value: value,
+	}
+}
+
+func (n Note) String() string {
+	return n.Value
+}
+
 // Recipe is a Cooklang recipe
 type Recipe struct {
-	Name        string   `yaml:"-"`
-	Metadata    Metadata `json:"metadata"`
-	Steps       []*Step  `json:"steps" yaml:"steps"`
+	Name        string     `yaml:"-"`
+	Metadata    Metadata   `json:"metadata"`
+	Steps       []*Step    `json:"steps" yaml:"steps"`
+	Sections    []*Section `json:"sections,omitempty" yaml:"sections,omitempty"`
+	Notes       []*Note    `json:"notes,omitempty" yaml:"notes,omitempty"`
 	Ingredients map[string][]string
 
 	Cookware map[string][]string `json:"cookware"`
@@ -23,15 +67,42 @@ func NewRecipe(name string) Recipe {
 		Name:        name,
 		Metadata:    make(Metadata),
 		Steps:       make([]*Step, 0),
+		Sections:    make([]*Section, 0),
+		Notes:       make([]*Note, 0),
 		Ingredients: make(map[string][]string),
 		Cookware:    make(map[string][]string),
 		Timers:      make(map[string]string),
 	}
 }
 
+// AddSection appends a new section to the recipe.
+func (r *Recipe) AddSection(sec *Section) {
+	r.Sections = append(r.Sections, sec)
+}
+
+// AddNote appends a new note to the recipe and associates it with the active
+// section, if any.
+func (r *Recipe) AddNote(n *Note) {
+	if len(r.Sections) > 0 {
+		cur := r.Sections[len(r.Sections)-1]
+		if n.Section == "" {
+			n.Section = cur.Name
+		}
+		cur.Notes = append(cur.Notes, n)
+	}
+	r.Notes = append(r.Notes, n)
+}
+
 // AddStep appends a new step to the recipe
 func (r *Recipe) AddStep(s *Step) {
 	s.Number = len(r.Steps)
+	if len(r.Sections) > 0 {
+		cur := r.Sections[len(r.Sections)-1]
+		if s.Section == "" {
+			s.Section = cur.Name
+		}
+		cur.Steps = append(cur.Steps, s)
+	}
 	r.Steps = append(r.Steps, s)
 	// TODO: add em up. need conversions...
 	for _, i := range s.Ingredients {

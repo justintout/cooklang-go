@@ -60,6 +60,11 @@ func TestUpgrade(t *testing.T) {
 			"-- see [- here\n>> k: v\n",
 			"---\nk: v\n---\n\n-- see [- here\n",
 		},
+		{
+			"sections notes and forced line breaks are preserved",
+			"= Dough\n> Keep cold\nMix @?flour{200%g}(sifted)\\\nand @water.\n",
+			"= Dough\n\n> Keep cold\n\nMix @?flour{200%g}(sifted)\\\nand @water.\n",
+		},
 	}
 	for _, tt := range tests {
 		got, err := upgrade(tt.in)

@@ -9,6 +9,7 @@ import (
 type Cookware struct {
 	Name string `json:"name"`
 	Quantity
+	Optional bool `json:"optional,omitempty"`
 
 	raw string
 }
@@ -16,15 +17,19 @@ type Cookware struct {
 // NewCookware creates a cookware from a cookware definition. Default quantity is 1.
 func NewCookware(source string) *Cookware {
 	c := Cookware{raw: source}
-	ns := strings.IndexRune(source, '#') + 1
-	qs := strings.IndexRune(source, '{')
+	rest := strings.TrimSpace(strings.TrimPrefix(source, leftCookware))
+	if strings.HasPrefix(rest, optionalMarker) {
+		c.Optional = true
+		rest = strings.TrimPrefix(rest, optionalMarker)
+	}
+	qs := strings.IndexRune(rest, '{')
 	if qs == -1 {
-		c.Name = strings.TrimSpace(source[ns:])
+		c.Name = strings.TrimSpace(rest)
 		c.Quantity = Quantity{N: 1, S: "1"}
 		return &c
 	}
-	c.Name = strings.TrimSpace(source[ns:qs])
-	c.Quantity = parseQuantity(source[qs:], "1", 1)
+	c.Name = strings.TrimSpace(rest[:qs])
+	c.Quantity = parseQuantity(rest[qs:], "1", 1)
 	return &c
 }
 
@@ -39,10 +44,12 @@ func (c Cookware) MarshalJSON() ([]byte, error) {
 		Type     string `json:"type"`
 		Name     string `json:"name"`
 		Quantity string `json:"quantity"`
+		Optional bool   `json:"optional,omitempty"`
 	}{
 		Type:     "cookware",
 		Name:     c.Name,
 		Quantity: c.S,
+		Optional: c.Optional,
 	}
 	return json.Marshal(cc)
 }
@@ -53,5 +60,6 @@ func (c Cookware) DirectionItem() DirectionItem {
 		Type:     "cookware",
 		Name:     c.Name,
 		Quantity: c.Quantity.Canonical(),
+		Optional: c.Optional,
 	}
 }

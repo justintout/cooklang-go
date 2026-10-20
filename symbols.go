@@ -16,3 +16,10 @@ const leftTimer = "~"
 const leftQuantity = "{"
 const rightQuantity = "}"
 const dividerQuantity = "%"
+
+const leftSection = "="
+const leftNote = ">"
+const optionalMarker = "?"
+const leftPreparation = "("
+const rightPreparation = ")"
+const lineBreakMarker = `\`

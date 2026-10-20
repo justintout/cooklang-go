@@ -43,6 +43,20 @@ func TestSymbolsAtLineStart(t *testing.T) {
 			"first\n\nAdd @salt.",
 			func(r Recipe) bool { return len(r.Steps) == 2 },
 		},
+		{
+			"section header at line start",
+			"first\n== Filling ==\nAdd @salt.",
+			func(r Recipe) bool {
+				return len(r.Sections) == 1 && r.Sections[0].Name == "Filling" && len(r.Steps) == 2
+			},
+		},
+		{
+			"note at line start",
+			"first\n\n> Keep warm.\n\nAdd @salt.",
+			func(r Recipe) bool {
+				return len(r.Notes) == 1 && r.Notes[0].Value == "Keep warm." && len(r.Steps) == 2
+			},
+		},
 	}
 	for _, tt := range tests {
 		if !tt.check(MustParse(tt.source)) {
@@ -62,7 +76,27 @@ func TestNewIngredient(t *testing.T) {
 		},
 		{
 			"@whole milk{1 1/2%cup}",
-			Ingredient{Name: "whole milk", Quantity: Quantity{S: "1 1/2", N: 1.5}},
+			Ingredient{Name: "whole milk", Quantity: Quantity{S: "1 1/2", N: 1.5, Units: "cup"}},
+		},
+		{
+			"@?chives",
+			Ingredient{Name: "chives", Optional: true, Quantity: Quantity{S: "some", N: -1}},
+		},
+		{
+			"@?chilli flakes{1%pinch}",
+			Ingredient{Name: "chilli flakes", Optional: true, Quantity: Quantity{S: "1", N: 1, Units: "pinch"}},
+		},
+		{
+			"@onion{1}(peeled and finely chopped)",
+			Ingredient{Name: "onion", Preparation: "peeled and finely chopped", Quantity: Quantity{S: "1", N: 1}},
+		},
+		{
+			"@garlic{}(minced)",
+			Ingredient{Name: "garlic", Preparation: "minced", Quantity: Quantity{S: "some", N: -1}},
+		},
+		{
+			"@?./sauces/tomato sauce{200%g}",
+			Ingredient{Name: "./sauces/tomato sauce", Optional: true, Quantity: Quantity{S: "200", N: 200, Units: "g"}},
 		},
 	}
 	for _, tt := range tests {
@@ -75,6 +109,12 @@ func TestNewIngredient(t *testing.T) {
 		}
 		if i.N != tt.expected.N {
 			t.Errorf("wrong number quantity: got: %v, want: %v", i.N, tt.expected.N)
+		}
+		if i.Optional != tt.expected.Optional {
+			t.Errorf("wrong optional flag for %q: got: %v, want: %v", tt.source, i.Optional, tt.expected.Optional)
+		}
+		if i.Preparation != tt.expected.Preparation {
+			t.Errorf("wrong preparation for %q: got: %q, want: %q", tt.source, i.Preparation, tt.expected.Preparation)
 		}
 	}
 }
@@ -96,6 +136,14 @@ func TestNewCookware(t *testing.T) {
 			"#bowls{3}",
 			Cookware{Name: "bowls", Quantity: Quantity{N: 3, S: "3"}},
 		},
+		{
+			"#?splatter guard{}",
+			Cookware{Name: "splatter guard", Optional: true, Quantity: Quantity{N: 1, S: "1"}},
+		},
+		{
+			"#?lid",
+			Cookware{Name: "lid", Optional: true, Quantity: Quantity{N: 1, S: "1"}},
+		},
 	}
 	for _, tt := range tests {
 		c := NewCookware(tt.source)
@@ -107,6 +155,9 @@ func TestNewCookware(t *testing.T) {
 		}
 		if c.N != tt.expected.N {
 			t.Errorf("wrong number quantity: got: %v, want: %v", c.N, tt.expected.N)
+		}
+		if c.Optional != tt.expected.Optional {
+			t.Errorf("wrong optional flag for %q: got: %v, want: %v", tt.source, c.Optional, tt.expected.Optional)
 		}
 	}
 }

@@ -9,7 +9,8 @@ import (
 
 // Step represents a step of a recipe
 type Step struct {
-	Number int `json:"stepNumber"`
+	Number  int    `json:"stepNumber"`
+	Section string `json:"section,omitempty"`
 
 	// Ingredients are the ingredients used in this step
 	Ingredients []*Ingredient `json:"ingredients"`

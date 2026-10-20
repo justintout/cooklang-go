@@ -117,14 +117,15 @@ func scanComments(line string, inComment bool) bool {
 }
 
 // separated puts a blank line between each pair of lines and drops the blank
-// lines of the original, where they carried no meaning.
+// lines of the original, where they carried no meaning. Lines ending with a
+// forced line break backslash keep the following line attached.
 func separated(lines []string) []string {
 	out := []string{}
 	for _, line := range lines {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		if len(out) > 0 {
+		if len(out) > 0 && !strings.HasSuffix(out[len(out)-1], `\`) {
 			out = append(out, "")
 		}
 		out = append(out, line)
